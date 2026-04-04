@@ -17,10 +17,21 @@ export interface Port {
   offsetY: number;
 }
 
+export type ExecutionType = 'manual' | 'automatic' | 'ai';
+
+export interface NodeExecutionConfig {
+  type: ExecutionType;
+  // Template JSON string que se mostrará en salidase
+  jsonTemplate?: string;
+  // Para análisis de botella de cuello (ms)
+  slaLimit?: number;
+}
+
 export interface DiagramNode {
   id: string;
   type: NodeType;
   laneId: string;
+  executionConfig?: NodeExecutionConfig;
   x: number;
   y: number;
   width: number;

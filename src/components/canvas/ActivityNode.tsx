@@ -8,7 +8,10 @@ interface NodeProps {
   isSelected: boolean;
   isConnecting: boolean;
   activePort: PortPosition | null;
+  isExecutionActive?: boolean;
+  executionStatus?: string;
   onSelect: (e: any) => void;
+  onDblClick?: (e: any) => void;
   onConnectStart: (port: PortPosition) => void;
   onConnectEnd: (port: PortPosition) => void;
   onDragMove: (e: any) => void;
@@ -20,7 +23,10 @@ export const ActivityNode: React.FC<NodeProps> = ({
   isSelected,
   isConnecting,
   activePort,
+  isExecutionActive,
+  executionStatus,
   onSelect,
+  onDblClick,
   onConnectStart,
   onConnectEnd,
   onDragMove,
@@ -34,7 +40,9 @@ export const ActivityNode: React.FC<NodeProps> = ({
       y={node.y}
       draggable
       onClick={onSelect}
+      onDblClick={onDblClick}
       onTap={onSelect}
+      onDblTap={onDblClick}
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
       onMouseEnter={() => setIsHovered(true)}
@@ -45,8 +53,11 @@ export const ActivityNode: React.FC<NodeProps> = ({
         height={node.height}
         fill={node.color || '#1e293b'}
         cornerRadius={node.type === 'activity' ? 25 : 0}
-        stroke={isSelected ? '#3b82f6' : 'rgba(255, 255, 255, 0.4)'}
-        strokeWidth={isSelected ? 2 : 1}
+        stroke={isExecutionActive ? '#22c55e' : (isSelected ? '#3b82f6' : 'rgba(255, 255, 255, 0.4)')}
+        strokeWidth={isExecutionActive ? 4 : (isSelected ? 2 : 1)}
+        shadowColor={isExecutionActive ? '#22c55e' : 'transparent'}
+        shadowBlur={isExecutionActive ? 15 : 0}
+        shadowOpacity={0.8}
       />
       <Text
         text={node.label}

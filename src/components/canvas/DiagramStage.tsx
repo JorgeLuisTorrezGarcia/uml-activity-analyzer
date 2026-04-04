@@ -8,9 +8,12 @@ import { StartEndNode } from './StartEndNode';
 import { ForkJoinNode } from './ForkJoinNode';
 import { Arrow } from './Arrow';
 import { useSocket } from '../../hooks/useSocket';
+import { useExecutionStore } from '../../store/executionStore';
 
 export const DiagramStage: React.FC<{ roomId: string }> = ({ roomId }) => {
-  const { state, selectedIds, setSelectedIds, updateNode, addArrow, bringToFront } = useDiagramStore();
+  const { state, selectedIds, setSelectedIds, setActiveConfigNodeId, updateNode, addArrow, bringToFront } = useDiagramStore();
+  const executionStore = useExecutionStore();
+  
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = React.useState({ width: 800, height: 600 });
@@ -61,6 +64,7 @@ export const DiagramStage: React.FC<{ roomId: string }> = ({ roomId }) => {
     // Selection cancellation on empty canvas
     if (e.target === e.target.getStage()) {
       setSelectedIds([]);
+      setActiveConfigNodeId(null);
       setConnectingFrom(null);
       return;
     }
@@ -199,12 +203,32 @@ export const DiagramStage: React.FC<{ roomId: string }> = ({ roomId }) => {
         {/* Layer 3: Nodes & UI */}
         <Layer>
           {[...state.nodes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)).map(node => {
+            
+            // Lógica de Ejecución (Shadow Node)
+            const activeToken = executionStore.tokens.find(t => t.currentNodeId === node.id);
+            const isExecutionActive = !!activeToken;
+            const executionStatus = activeToken?.status;
+
+            const handleNodeDoubleClick = (e: any) => {
+              if (executionStore.mode === 'play') {
+                if (isExecutionActive) {
+                   // Reservado. Delegado a DynamicFormPanel que observa el store.
+                }
+              } else if (executionStore.mode === 'edit') {
+                // Modo Edición: Abrir configurador de lógica
+                setActiveConfigNodeId(node.id);
+              }
+            };
+
             const commonProps = {
               node,
               isSelected: selectedIds.includes(node.id),
               isConnecting: connectingFrom !== null,
               activePort: connectingFrom?.nodeId === node.id ? connectingFrom.port : null,
+              isExecutionActive,
+              executionStatus,
               onSelect: () => handleNodeClick(node.id),
+              onDblClick: handleNodeDoubleClick,
               onConnectStart: (port: any) => setConnectingFrom({ nodeId: node.id, port }),
               onConnectEnd: (port: any) => {
                 if (connectingFrom && connectingFrom.nodeId !== node.id) {

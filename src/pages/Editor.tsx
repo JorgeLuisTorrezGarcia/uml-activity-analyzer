@@ -6,12 +6,17 @@ import { useDiagramStore } from '../store/diagramStore';
 import { DiagramStage } from '../components/canvas/DiagramStage';
 import { Toolbar } from '../components/toolbar/Toolbar';
 import { PropertiesPanel } from '../components/panels/PropertiesPanel';
+import { ExecutionControls } from '../components/execution/ExecutionControls';
+import { DynamicFormPanel } from '../components/execution/DynamicFormPanel';
+import { NodeConfigPanel } from '../components/execution/NodeConfigPanel';
+import { useExecutionStore } from '../store/executionStore';
 
 const Editor: React.FC = () => {
-  const { state, setState, isLeftPanelOpen, isRightPanelOpen, toggleLeftPanel, toggleRightPanel } = useDiagramStore();
+  const { state, setState, activeConfigNodeId, isLeftPanelOpen, isRightPanelOpen, toggleLeftPanel, toggleRightPanel } = useDiagramStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
+  const executionMode = useExecutionStore(state => state.mode);
 
   const [diagramName, setDiagramName] = React.useState(state.name || 'Diagrama sin título');
   const [isAiModalOpen, setIsAiModalOpen] = React.useState(false);
@@ -270,6 +275,12 @@ const Editor: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* OVERLAYS DE EJECUCION (BPM MOTOR) */}
+      <ExecutionControls />
+      {executionMode === 'play' && <DynamicFormPanel />}
+      {executionMode === 'edit' && activeConfigNodeId && <NodeConfigPanel />}
+      
     </div>
   );
 };

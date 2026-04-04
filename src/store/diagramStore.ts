@@ -24,6 +24,7 @@ const NODE_DEFAULTS: Record<NodeType, { width: number; height: number; label: st
 interface DiagramStore {
   state: DiagramState;
   selectedIds: string[];
+  activeConfigNodeId: string | null;
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
 
@@ -46,6 +47,7 @@ interface DiagramStore {
 
   // Selection
   setSelectedIds: (ids: string[]) => void;
+  setActiveConfigNodeId: (id: string | null) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
 
@@ -82,6 +84,7 @@ const initialState: DiagramState = {
 export const useDiagramStore = create<DiagramStore>((set, get) => ({
   state: initialState,
   selectedIds: [],
+  activeConfigNodeId: null,
   isLeftPanelOpen: true,
   isRightPanelOpen: true,
 
@@ -200,6 +203,7 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
 
   // ── Selection ─────────────────────────────────────────────
   setSelectedIds: (ids) => set({ selectedIds: ids }),
+  setActiveConfigNodeId: (id) => set({ activeConfigNodeId: id }),
   toggleLeftPanel: () => set((state) => ({ isLeftPanelOpen: !state.isLeftPanelOpen })),
   toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
 
