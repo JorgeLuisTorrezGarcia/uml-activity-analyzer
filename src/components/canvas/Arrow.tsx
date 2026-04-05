@@ -74,15 +74,30 @@ export const Arrow: React.FC<ArrowProps> = ({
         hitStrokeWidth={15}
         lineJoin="round"
       />
-      {arrow.label && (
-        <Text
-          text={arrow.label}
-          x={mx + 5}
-          y={my - 15}
-          fill="white"
-          fontSize={12}
-        />
-      )}
+      <Text
+        text={arrow.label || '...'}
+        x={mx + 5}
+        y={my - 15}
+        fill={arrow.label ? "white" : "transparent"}
+        fontSize={12}
+        onMouseEnter={(e) => {
+          if (!arrow.label) (e.target as any).fill('rgba(255,255,255,0.3)');
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'pointer';
+        }}
+        onMouseLeave={(e) => {
+          if (!arrow.label) (e.target as any).fill('transparent');
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+        }}
+        onDblClick={(e) => {
+          e.cancelBubble = true;
+          const newLabel = prompt("Etiqueta de la conexión (Ej. 'Sí', 'No'):", arrow.label || '');
+          if (newLabel !== null) {
+            useDiagramStore.getState().updateArrow(arrow.id, { label: newLabel });
+          }
+        }}
+      />
       
       {/* Waypoints arrastrables */}
       {isSelected && anchorPoints.map((pt, i) => (

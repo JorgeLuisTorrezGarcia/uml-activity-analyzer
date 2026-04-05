@@ -165,12 +165,23 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
   // ── Arrows ────────────────────────────────────────────────
   addArrow: (fromId, toId, fromPort, toPort) => {
     const id = uuidv4();
+    
+    // Auto-label para Decision nodes
+    let defaultLabel = '';
+    const fromNode = get().state.nodes.find(n => n.id === fromId);
+    if (fromNode?.type === 'decision') {
+      const existingOutArrows = get().state.arrows.filter(a => a.fromId === fromId).length;
+      if (existingOutArrows === 0) defaultLabel = 'Sí';
+      else if (existingOutArrows === 1) defaultLabel = 'No';
+    }
+
     const newArrow: DiagramArrow = {
       id,
       fromId,
       toId,
       fromPort,
       toPort,
+      label: defaultLabel,
       waypoints: [],
     };
     set(s => ({ state: { ...s.state, arrows: [...s.state.arrows, newArrow] } }));

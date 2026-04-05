@@ -1,5 +1,5 @@
 import React from 'react';
-import { Circle, Group, Ring } from 'react-konva';
+import { Circle, Group, Ring, Rect } from 'react-konva';
 import { DiagramNode, PortPosition } from '../../types/diagram';
 import { NodePorts } from './NodePorts';
 
@@ -41,6 +41,12 @@ export const StartEndNode: React.FC<NodeProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Invisible hitbox */}
+      <Rect
+        width={node.width}
+        height={node.height}
+        fill="transparent"
+      />
       {/* Start Node: Solid Black Circle */}
       {node.type === 'start' && (
         <Circle

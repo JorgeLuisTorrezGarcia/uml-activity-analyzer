@@ -115,7 +115,20 @@ export const DynamicFormPanel: React.FC = () => {
             <p style={{ fontSize: '13px', margin: 0 }}>Decisión Manual Requerida:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {decisionArrows.length > 0 ? decisionArrows.map((arrow, idx) => {
-                const isTruePath = arrow.fromPort === 'bottom' || idx === 0;
+                const labelRaw = (arrow.label || '').toLowerCase();
+                // Determina explícitamente el tipo de ruta según el texto, fallback al puerto / index
+                const isExplicitTrue = labelRaw.includes('si') || labelRaw.includes('sí') || labelRaw.includes('yes') || labelRaw.includes('true');
+                const isExplicitFalse = labelRaw.includes('no') || labelRaw.includes('false');
+                
+                let isTruePath = false;
+                if (isExplicitTrue) isTruePath = true;
+                else if (isExplicitFalse) isTruePath = false;
+                else if (arrow.fromPort === 'bottom') isTruePath = true;
+                else if (idx === 0) isTruePath = true; // Fallback extremo
+
+                // Visual label
+                const visualText = arrow.label ? `${arrow.label} (${isTruePath ? 'Verdadero' : 'Falso'})` : (isTruePath ? 'Verdadero (Sí)' : 'Falso (No)');
+
                 return (
                   <button 
                     key={arrow.id}
@@ -123,7 +136,7 @@ export const DynamicFormPanel: React.FC = () => {
                     onClick={() => handleAdvance(arrow.toId)} 
                     style={{ background: isTruePath ? '#10b981' : '#ef4444' }}
                   >
-                    Tomar camino {isTruePath ? 'Verdadero (Sí)' : 'Falso (No)'}
+                    Tomar camino: {visualText}
                   </button>
                 )
               }) : (

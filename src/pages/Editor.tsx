@@ -23,6 +23,7 @@ const Editor: React.FC = () => {
   const [aiPrompt, setAiPrompt] = React.useState('');
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isRecording, setIsRecording] = React.useState(false);
   
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const [inviteEmail, setInviteEmail] = React.useState('');
@@ -64,6 +65,44 @@ const Editor: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const toggleRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta Reconocimiento de Voz nativo. Usa Chrome o Edge para esta funcionalidad.");
+      return;
+    }
+    if (isRecording) {
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false; // Fix: Evita que el navegador repita palabras interinas
+    recognition.continuous = true;
+
+    recognition.onstart = () => setIsRecording(true);
+    
+    recognition.onresult = (event: any) => {
+      let currentTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      setAiPrompt((prev) => prev + (prev.endsWith(' ') || prev === '' ? '' : ' ') + currentTranscript);
+    };
+
+    recognition.onerror = (e: any) => {
+      console.error('mic error', e);
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => setIsRecording(false);
+
+    recognition.start();
+    // Parar automáticamente a los 10 segundos por si acaso (MVP limite)
+    setTimeout(() => { try { recognition.stop(); } catch(e){} }, 10000);
   };
 
   const handleInvite = async () => {
@@ -200,22 +239,61 @@ const Editor: React.FC = () => {
 
       {/* AI ASSISTANT MODAL */}
       {isAiModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="saas-card" style={{ width: '500px', border: '1px solid #3b82f6' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(3px)' }}>
+          <div className="saas-card" style={{ width: '550px', border: '1px solid #3b82f6', position: 'relative', overflow: 'hidden' }}>
+            
+            {/* OVERLAY DE CARGA AI */}
+            {isGenerating && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                zIndex: 10, color: '#60a5fa'
+              }}>
+                <div style={{ width: '40px', height: '40px', border: '3px solid transparent', borderTopColor: '#60a5fa', borderLeftColor: '#60a5fa', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <p style={{ marginTop: '16px', fontWeight: 'bold', fontSize: '15px' }}>Materializando Diagrama...</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>Gemini está procesando la estructura</p>
+                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
+
             <h3 style={{ margin: '0 0 16px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2"><path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2zm0 16a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2zM4 10a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2zm16 0a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2zM6 12h4m4 0h4" /></svg>
               Gemini AI Architect
             </h3>
             <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '20px' }}>Describe el cambio o el diagrama que deseas generar y la IA lo dibujará por ti.</p>
             
-            <textarea 
-              className="saas-input"
-              style={{ height: '120px', resize: 'none', marginBottom: '20px' }}
-              placeholder="Ej: Agrega una calle para 'Soporte' y un nodo de decisión para 'Ticket aprobado'..."
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              disabled={isGenerating}
-            />
+            <div style={{ position: 'relative', marginBottom: '20px' }}>
+              <textarea 
+                className="saas-input"
+                style={{ height: '140px', resize: 'none', paddingRight: '50px', background: isRecording ? '#1e293b' : '#0f172a', borderColor: isRecording ? '#ef4444' : '#3b82f6', width: '100%' }}
+                placeholder="Ej: Agrega una calle para 'Soporte' y un nodo de decisión para 'Ticket aprobado'..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                disabled={isGenerating}
+              />
+              
+              {/* MICROPHONE BUTTON */}
+              <button
+                onClick={toggleRecording}
+                style={{
+                  position: 'absolute', right: '12px', bottom: '12px', 
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: isRecording ? '#ef4444' : '#334155',
+                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: isRecording ? '0 0 10px rgba(239, 68, 68, 0.5)' : 'none',
+                  transition: 'all 0.2s', zIndex: 5
+                }}
+                title="Dictar por voz"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+            </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
@@ -223,7 +301,7 @@ const Editor: React.FC = () => {
                 onClick={handleAiGenerate}
                 disabled={isGenerating || !aiPrompt.trim()}
               >
-                {isGenerating ? 'Generando Magia...' : 'Generar Cambios'}
+                Generar Cambios
               </button>
               <button 
                 className="saas-button secondary" 

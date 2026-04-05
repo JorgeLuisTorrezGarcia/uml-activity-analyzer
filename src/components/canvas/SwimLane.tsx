@@ -12,12 +12,15 @@ interface SwimLaneProps {
 export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
   const { updateLane } = useDiagramStore();
   const [isEditing, setIsEditing] = React.useState(false);
+  
+  const laneHeight = (lane as any).height || height;
+
   return (
     <Group x={x} y={0}>
       {/* Dynamic Background Rect */}
       <Rect
         width={lane.width}
-        height={height}
+        height={laneHeight}
         fill="rgba(30, 41, 59, 0.3)"
         stroke="rgba(255, 255, 255, 0.05)"
         strokeWidth={1}
@@ -69,9 +72,69 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
       
       {/* Right separation line */}
       <Line
-        points={[lane.width, 0, lane.width, height]}
+        points={[lane.width, 0, lane.width, laneHeight]}
         stroke="rgba(255, 255, 255, 0.1)"
         strokeWidth={1}
+      />
+
+      {/* Resize Handle (Right) */}
+      <Rect
+        x={lane.width - 5}
+        y={0}
+        width={10}
+        height={laneHeight}
+        fill="transparent"
+        draggable
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'col-resize';
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+        }}
+        onDragMove={(e) => {
+          // El 'e.target.x()' aquí YA ESTÁ RELATIVO AL GRUPO, porque el Rect está dentro del Group.
+          // Por tanto, la nueva anchura de la calle es simplemente e.target.x() + 5
+          const newWidth = e.target.x() + 5;
+          updateLane(lane.id, { width: Math.max(100, newWidth) });
+          // Mantenemos el handle alineado al borde, que ahora se movió visualmente
+          e.target.x(Math.max(100, newWidth) - 5);
+        }}
+        onDragEnd={(e) => {
+          const newWidth = e.target.x() + 5;
+          updateLane(lane.id, { width: Math.max(100, newWidth) });
+          e.target.x(Math.max(100, newWidth) - 5);
+        }}
+      />
+
+      {/* Vertical Resize Handle (Bottom) */}
+      <Rect
+        x={0}
+        y={laneHeight - 5}
+        width={lane.width}
+        height={10}
+        fill="transparent"
+        draggable
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'row-resize';
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+        }}
+        onDragMove={(e) => {
+          // e.target.y() is relative to Group
+          const newHeight = e.target.y() + 5;
+          updateLane(lane.id, { height: Math.max(200, newHeight) } as any);
+          e.target.y(Math.max(200, newHeight) - 5);
+        }}
+        onDragEnd={(e) => {
+          const newHeight = e.target.y() + 5;
+          updateLane(lane.id, { height: Math.max(200, newHeight) } as any);
+          e.target.y(Math.max(200, newHeight) - 5);
+        }}
       />
     </Group>
   );
