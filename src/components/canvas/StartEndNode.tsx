@@ -34,8 +34,14 @@ export const StartEndNode: React.FC<NodeProps> = ({
       x={node.x}
       y={node.y}
       draggable
-      onClick={onSelect}
-      onTap={onSelect}
+      onClick={(e) => {
+        e.cancelBubble = true;
+        onSelect(e);
+      }}
+      onTap={(e) => {
+        e.cancelBubble = true;
+        onSelect(e);
+      }}
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
       onMouseEnter={() => setIsHovered(true)}
@@ -52,7 +58,7 @@ export const StartEndNode: React.FC<NodeProps> = ({
         <Circle
           x={node.width / 2}
           y={node.height / 2}
-          radius={15}
+          radius={25}
           fill={node.color || "black"}
           stroke={isSelected ? '#3b82f6' : 'white'}
           strokeWidth={isSelected ? 2 : 1}
@@ -65,8 +71,8 @@ export const StartEndNode: React.FC<NodeProps> = ({
           <Ring
             x={node.width / 2}
             y={node.height / 2}
-            innerRadius={10}
-            outerRadius={15}
+            innerRadius={20}
+            outerRadius={25}
             fill="white"
             stroke={isSelected ? '#3b82f6' : 'black'}
             strokeWidth={isSelected ? 2 : 1}
@@ -74,7 +80,7 @@ export const StartEndNode: React.FC<NodeProps> = ({
           <Circle
             x={node.width / 2}
             y={node.height / 2}
-            radius={8}
+            radius={15}
             fill={node.color || "black"}
           />
         </>

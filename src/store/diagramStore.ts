@@ -54,6 +54,7 @@ interface DiagramStore {
   // Persistence
   setState: (state: DiagramState) => void;
   reset: () => void;
+  clearNodes: () => void;
 
   // Auto-layout
   autoLayout: () => void;
@@ -221,6 +222,11 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
   // ── Persistence ───────────────────────────────────────────
   setState: (state) => set({ state }),
   reset: () => set({ state: { ...initialState, id: uuidv4() }, selectedIds: [] }),
+  clearNodes: () => set(s => ({
+    state: { ...s.state, nodes: [], arrows: [] },
+    selectedIds: [],
+    activeConfigNodeId: null
+  })),
 
   // ── Auto-layout (Dagre, vertical, lane-aware) ─────────────
   autoLayout: () => {

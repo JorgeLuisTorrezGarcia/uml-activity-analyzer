@@ -10,6 +10,9 @@ La plataforma SaaS implementa:
 - **Modelo de Cuentas:** Login, Registro e Inicio de sesión persistente para organizar archivos lógicos en la nube (Postgres).
 - **Entorno Unificado (UI Compartida):** Todo el sistema obedece a un esquema estético de "Paneles Oscuros / Draw.io moderno" (SaaS styling y utilitarios globales) manteniendo limpieza gráfica a 60 FPS.
 - **Asistente de Inteligencia Artificial (Gemini):** ¿No quieres diagramar manualmente? Abre el panel de IA, describe el flujo, y nuestro motor acoplado a Google Gemini generará instantáneamente los contenedores y conexiones calculadas en milisegundos. (Requiere API Key de Google personal administrada de manera segura).
+- **Control Táctico Empresarial (BPMN Engine):** Tu diagrama es más que un dibujo, es ejecutable.
+  - *Modo Edición Interactiva*: Un robusto módulo constructor te permite armar formularios personalizados en cada "Actividad" (Inputs de texto, Fechas, Selección Múltiple) a lo Moodle o Typeform.
+  - *Modo "Play" (Simulación)*: Invita usuarios a correr tu diagrama de flujo. Ellos simplemente deberán llenar el hermoso UI de tu formulario creado; detrás de cámaras las respuestas compilarán en Payloads de formato JSON que viajarán transparentemente a través del lienzo.
 - **Workspace Colaborativo Compartido:** Posibilidad de invitar e involucrar de forma programática a correos de terceros a participar y coescribir dentro del lienzo infinito de tus diagramas guardados. Incluye Notificaciones En-Demanda.
 
 ---
@@ -62,4 +65,3 @@ npm install
 npm run dev
 ```
 
-Las variables de frontend son innecesarias. Todo enrutamiento y proxy se realiza contra `VITE_API_URL` que por defecto viaja al `http://localhost:3001/api`. No olvides correr tu clúster de Base de datos prisma por debajo.

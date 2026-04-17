@@ -19,10 +19,23 @@ export interface Port {
 
 export type ExecutionType = 'manual' | 'automatic' | 'ai';
 
+export type FormFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'boolean';
+
+export interface FormField {
+  id: string;          // UUID del campo
+  name: string;        // Se usará como llave en el JSON (ej. "nivel_aprobacion")
+  label: string;       // Etiqueta visible al usuario (ej. "¿Cuál es el nivel?")
+  type: FormFieldType;
+  options?: string[];  // Solo si type === 'select'
+  required: boolean;
+}
+
 export interface NodeExecutionConfig {
   type: ExecutionType;
-  // Template JSON string que se mostrará en salidase
+  // Template JSON string que se mostrará en salida
   jsonTemplate?: string;
+  // Campos visuales drag & drop para el creador de formularios
+  formSchema?: FormField[];
   // Para análisis de botella de cuello (ms)
   slaLimit?: number;
 }
