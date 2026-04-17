@@ -69,6 +69,33 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
           />
         </Group>
       )}
+
+      {/* Botón Eliminar Calle (X) */}
+      <Group
+        x={lane.width - 25}
+        y={12}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'pointer';
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container();
+          if (container) container.style.cursor = 'default';
+        }}
+        onClick={() => {
+          if (window.confirm(`¿Estás seguro de eliminar la calle "${lane.title}" y todos sus nodos?`)) {
+            useDiagramStore.getState().deleteLane(lane.id);
+          }
+        }}
+        onTap={() => {
+          if (window.confirm(`¿Estás seguro de eliminar la calle "${lane.title}" y todos sus nodos?`)) {
+            useDiagramStore.getState().deleteLane(lane.id);
+          }
+        }}
+      >
+        <Rect width={16} height={16} fill="rgba(239, 68, 68, 0.2)" cornerRadius={4} />
+        <Text text="×" width={16} height={16} align="center" verticalAlign="middle" fill="#ef4444" fontSize={14} fontStyle="bold" />
+      </Group>
       
       {/* Right separation line */}
       <Line
