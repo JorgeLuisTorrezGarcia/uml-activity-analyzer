@@ -28,7 +28,7 @@ interface ExecutionStore {
   toggleMode: () => void;
   
   // Simulation
-  startExecution: (startNodeId: string) => void;
+  startExecution: (startNodeId: string, customTokenId?: string) => void;
   stopExecution: () => void;
   
   // Operations
@@ -54,9 +54,9 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => ({
     }
   },
 
-  startExecution: (startNodeId) => {
+  startExecution: (startNodeId, customTokenId) => {
     const newToken: ProcessToken = {
-      id: uuidv4(),
+      id: customTokenId || uuidv4(),
       currentNodeId: startNodeId,
       payload: {},
       status: 'running',

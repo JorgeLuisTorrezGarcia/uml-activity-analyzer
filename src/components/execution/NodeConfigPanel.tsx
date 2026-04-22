@@ -129,6 +129,7 @@ export const NodeConfigPanel: React.FC = () => {
             <button className="saas-button" style={{ fontSize: '11px', padding: '6px 10px', background: '#10b981' }} onClick={() => handleAddField('number')}>+ Número</button>
             <button className="saas-button" style={{ fontSize: '11px', padding: '6px 10px', background: '#f59e0b' }} onClick={() => handleAddField('select')}>+ Desplegable</button>
             <button className="saas-button" style={{ fontSize: '11px', padding: '6px 10px', background: '#8b5cf6' }} onClick={() => handleAddField('boolean')}>+ Checkbox</button>
+            <button className="saas-button" style={{ fontSize: '11px', padding: '6px 10px', background: '#ef4444' }} onClick={() => handleAddField('file')}>+ Archivo</button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

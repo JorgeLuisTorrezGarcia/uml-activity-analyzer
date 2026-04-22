@@ -19,7 +19,7 @@ export interface Port {
 
 export type ExecutionType = 'manual' | 'automatic' | 'ai';
 
-export type FormFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'boolean';
+export type FormFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'boolean' | 'file';
 
 export interface FormField {
   id: string;          // UUID del campo

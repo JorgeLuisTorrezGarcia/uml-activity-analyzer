@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useExecutionStore } from '../../store/executionStore';
 import { useDiagramStore } from '../../store/diagramStore';
+import axios from 'axios';
 
 export const DynamicFormPanel: React.FC = () => {
+  const { id: dbDiagramId } = useParams<{ id: string }>();
   const { tokens, moveToken, endExecution } = useExecutionStore();
   const state = useDiagramStore(s => s.state);
   
   const [jsonText, setJsonText] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [filesData, setFilesData] = useState<Record<string, File>>({});
   const [errorObj, setErrorObj] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [activeTab, setActiveTab] = useState<'actual' | 'history'>('actual');
+  const [nodeHistory, setNodeHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const activeToken = tokens.find(t => t.status === 'running');
   const activeNode = state.nodes.find(n => n.id === activeToken?.currentNodeId);
@@ -17,18 +26,39 @@ export const DynamicFormPanel: React.FC = () => {
     if (activeNode) {
       setJsonText(activeNode.executionConfig?.jsonTemplate || '');
       setErrorObj('');
-      // Iniciar el form data vacío o con valores por defecto
       const initialData: Record<string, any> = {};
       const schema = activeNode.executionConfig?.formSchema || [];
       schema.forEach(field => {
         if (field.type === 'boolean') initialData[field.name] = false;
         else if (field.type === 'number') initialData[field.name] = 0;
         else if (field.type === 'select' && field.options?.[0]) initialData[field.name] = field.options[0];
-        else initialData[field.name] = '';
+        else if (field.type !== 'file') initialData[field.name] = '';
       });
       setFormData(initialData);
+      setFilesData({});
     }
   }, [activeNode?.id, activeNode?.executionConfig]);
+
+  const fetchHistory = async () => {
+    if (!activeNode?.id || !dbDiagramId) return;
+    setIsLoadingHistory(true);
+    try {
+      const tokenLocal = localStorage.getItem('token');
+      const res = await axios.get(`http://localhost:3001/api/execute/diagram/${dbDiagramId}/node/${activeNode.id}`, {
+        headers: { Authorization: `Bearer ${tokenLocal}` }
+      });
+      setNodeHistory(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+    setIsLoadingHistory(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchHistory();
+    }
+  }, [activeTab, activeNode?.id]);
 
   if (!activeToken || !activeNode) return null;
 
@@ -36,21 +66,27 @@ export const DynamicFormPanel: React.FC = () => {
   const schema = activeNode.executionConfig?.formSchema || [];
   const hasSchema = schema.length > 0;
   
-  const handleAdvance = (forcedPathToId?: string) => {
+  const handleAdvance = async (forcedPathToId?: string) => {
     let parsedPayload = {};
     
     // Si el nodo tiene esquema creado por el form builder, usamos formData
     if (hasSchema) {
       // Validación básica
       for (const field of schema) {
-        if (field.required && (formData[field.name] === '' || formData[field.name] === null || formData[field.name] === undefined)) {
-          setErrorObj(`El campo "${field.label}" es obligatorio.`);
-          return;
+        if (field.required) {
+          if (field.type === 'file' && !filesData[field.name]) {
+            setErrorObj(`El archivo "${field.label}" es obligatorio.`);
+            return;
+          }
+          if (field.type !== 'file' && (formData[field.name] === '' || formData[field.name] === null || formData[field.name] === undefined)) {
+            setErrorObj(`El campo "${field.label}" es obligatorio.`);
+            return;
+          }
         }
       }
       parsedPayload = { ...formData };
     } else {
-      // Modo Legacy (inyección de JSON Crudo)
+      // Modo Legacy
       if (jsonText.trim()) {
         try {
           parsedPayload = JSON.parse(jsonText);
@@ -61,7 +97,53 @@ export const DynamicFormPanel: React.FC = () => {
       }
     }
 
-    const outgoingData = { timestamp: Date.now(), from: activeNode.id, ...parsedPayload };
+    // Opcional: Persistir al Backend antes de avanzar (BPM Tracking)
+    setIsSubmitting(true);
+    let uploadedUrls: string[] = [];
+    try {
+      const tokenLocal = localStorage.getItem('token');
+      if (tokenLocal) {
+        // Envolver en FormData HTML web API
+        const formPayload = new FormData();
+        // El diagrama global no guarda el Token Instance en backend todavia, pero enviamos los datos si hay API.
+        // Fallback: asumo "instance_test" por ahora
+        formPayload.append('instanceId', activeToken.id);
+        formPayload.append('nodeId', activeNode.id);
+        formPayload.append('laneId', activeNode.laneId || '');
+        formPayload.append('formData', JSON.stringify(parsedPayload));
+
+        // Subir los filesData
+        Object.values(filesData).forEach(file => {
+          formPayload.append('files', file);
+        });
+
+        const res = await axios.post('http://localhost:3001/api/execute/step', formPayload, {
+          headers: { 
+            Authorization: `Bearer ${tokenLocal}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        if (res.data && res.data.artifactsUrls) {
+          uploadedUrls = res.data.artifactsUrls;
+        }
+      }
+    } catch (e: any) {
+      if (e.response && e.response.status === 400) {
+        setErrorObj(e.response.data.suggestion || e.response.data.error);
+        setIsSubmitting(false);
+        return; // Detener el avance si la persistencia falló por ID inválido
+      }
+      console.warn("Ejecución en frontend sin persistencia online (Offline Mode)");
+    }
+    setIsSubmitting(false);
+
+    const outgoingData = { 
+      timestamp: Date.now(), 
+      from: activeNode.id, 
+      ...parsedPayload,
+      ...(uploadedUrls.length > 0 ? { artifacts: uploadedUrls } : {})
+    };
     
     // Algoritmo de Avance
     const outgoingArrows = state.arrows.filter(a => a.fromId === activeNode.id);
@@ -86,6 +168,54 @@ export const DynamicFormPanel: React.FC = () => {
     setErrorObj('');
   };
 
+  const handleFileChange = (name: string, file: File | null) => {
+    if (file) {
+      setFilesData(prev => ({ ...prev, [name]: file }));
+    } else {
+      const newFiles = { ...filesData };
+      delete newFiles[name];
+      setFilesData(newFiles);
+    }
+    setErrorObj('');
+  };
+
+  const renderIncomingData = (payload: any) => {
+    if (!payload) return null;
+    const entries = Object.entries(payload).filter(([k]) => k !== 'timestamp' && k !== 'from' && k !== 'artifacts');
+    if (entries.length === 0 && (!payload.artifacts || payload.artifacts.length === 0)) return null;
+
+    return (
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Datos de Entrada recibidos:</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 2fr', gap: '8px', background: '#1e293b', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
+          {entries.map(([key, value]) => {
+            let displayValue: React.ReactNode = String(value);
+            if (typeof value === 'string' && value.startsWith('http')) {
+              displayValue = <a href={value} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>Ver Archivo 📎</a>;
+            }
+            return (
+              <React.Fragment key={key}>
+                <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 500, alignSelf: 'center', wordBreak: 'break-word' }}>{key}</div>
+                <div style={{ fontSize: '13px', color: '#f8fafc', wordBreak: 'break-word', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>{displayValue}</div>
+              </React.Fragment>
+            );
+          })}
+          
+          {payload.artifacts && payload.artifacts.length > 0 && (
+            <React.Fragment>
+              <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 500, alignSelf: 'center' }}>Archivos Adjuntos</div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>
+                {payload.artifacts.map((url: string, i: number) => (
+                  <a key={i} href={url.startsWith('http') ? url : `http://localhost:3001${url}`} target="_blank" rel="noreferrer" style={{ color: '#ef4444', textDecoration: 'underline', fontSize: '12px' }}>Adjunto {i+1} 📎</a>
+                ))}
+              </div>
+            </React.Fragment>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{
       position: 'absolute',
@@ -103,21 +233,30 @@ export const DynamicFormPanel: React.FC = () => {
       padding: '24px',
       overflowY: 'auto'
     }}>
-      <h2 style={{ fontSize: '18px', marginBottom: '8px', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
-        ⚙️ Tarea en Progreso
+      <h2 style={{ fontSize: '18px', margin: '0 0 16px 0' }}>
+        ⚙️ {activeNode.label || nodeType}
       </h2>
-      <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>
-        Nodo actual: <strong style={{ color: '#e2e8f0'}}>{activeNode.label || nodeType}</strong>
-      </p>
 
-      <div style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', marginBottom: '24px' }}>
-        <p style={{ fontSize: '12px', color: '#60a5fa', margin: 0 }}>Payload Acumulado:</p>
-        <pre style={{ margin: '8px 0 0 0', fontSize: '11px', whiteSpace: 'pre-wrap', wordWrap: 'break-word', maxHeight: '100px', overflowY: 'auto' }}>
-          {JSON.stringify(activeToken.payload, null, 2)}
-        </pre>
+      {/* TABS */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #334155', marginBottom: '24px' }}>
+        <button 
+          onClick={() => setActiveTab('actual')}
+          style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'actual' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'actual' ? '#3b82f6' : '#94a3b8', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+        >
+          Tarea Actual
+        </button>
+        <button 
+          onClick={() => setActiveTab('history')}
+          style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'history' ? '2px solid #10b981' : '2px solid transparent', color: activeTab === 'history' ? '#10b981' : '#94a3b8', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+        >
+          Historial Pasado
+        </button>
       </div>
 
+      {activeTab === 'actual' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+        {/* TABLA DE DATOS N8N STYLE EN LUGAR DE PRE JSON */}
+        {renderIncomingData(activeToken.payload)}
         {!isDecision ? (
           <>
             {hasSchema ? (
@@ -152,6 +291,15 @@ export const DynamicFormPanel: React.FC = () => {
                       </select>
                     )}
 
+                    {field.type === 'file' && (
+                      <input 
+                        className="saas-input" 
+                        type="file" 
+                        onChange={e => handleFileChange(field.name, e.target.files ? e.target.files[0] : null)} 
+                        style={{ padding: '8px' }}
+                      />
+                    )}
+
                     {field.type === 'boolean' && (
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
                         <input type="checkbox" checked={!!formData[field.name]} onChange={e => handleFieldChange(field.name, e.target.checked)} />
@@ -180,8 +328,8 @@ export const DynamicFormPanel: React.FC = () => {
 
             {errorObj && <p style={{ color: '#ef4444', fontSize: '11px', margin: 0, padding: '8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px' }}>Errores: {errorObj}</p>}
             
-            <button className="saas-button" onClick={() => handleAdvance()} style={{ marginTop: 'auto', background: '#3b82f6' }}>
-              Completar y Avanzar ➔
+            <button className="saas-button" onClick={() => handleAdvance()} disabled={isSubmitting} style={{ marginTop: 'auto', background: '#3b82f6', opacity: isSubmitting ? 0.7 : 1 }}>
+              {isSubmitting ? 'Procesando...' : 'Completar y Avanzar ➔'}
             </button>
           </>
         ) : (
@@ -218,6 +366,49 @@ export const DynamicFormPanel: React.FC = () => {
           </>
         )}
       </div>
+      )}
+
+      {/* RENDER TAB HISTORIAL */}
+      {activeTab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+            Visualizando las veces que este bloque fue completado por otros usuarios en el pasado.
+          </p>
+
+          {isLoadingHistory && <p style={{ fontSize: '12px', color: '#3b82f6' }}>Cargando registros...</p>}
+          {!isLoadingHistory && nodeHistory.length === 0 && <p style={{ fontSize: '12px', color: '#64748b' }}>Aún no hay registros paralelos para este nodo.</p>}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {nodeHistory.map(entry => (
+              <div key={entry.id} style={{ background: '#1e293b', padding: '16px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#e2e8f0' }}>{entry.executedBy?.name || 'Usuario'}</span>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>{new Date(entry.executedAt).toLocaleDateString()}</span>
+                </div>
+                
+                {entry.formData && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(80px, 1fr) 2fr', gap: '6px' }}>
+                    {Object.entries(entry.formData).map(([k, v]) => (
+                      <React.Fragment key={k}>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{k}</div>
+                        <div style={{ fontSize: '12px', color: '#f8fafc', background: '#0f172a', padding: '4px 8px', borderRadius: '4px' }}>{String(v)}</div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+
+                {entry.artifactsUrls && entry.artifactsUrls.length > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                     {entry.artifactsUrls.map((url: string, i: number) => (
+                        <a key={i} href={url.startsWith('http') ? url : `http://localhost:3001${url}`} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Adjunto {i+1}</a>
+                     ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
