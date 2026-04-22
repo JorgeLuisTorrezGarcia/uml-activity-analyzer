@@ -20,9 +20,8 @@ export const ExecutionControls: React.FC = () => {
       if (startNode) {
         setIsLoading(true);
         try {
-          const token = localStorage.getItem('token');
-          // Intenta registrar la instancia en backend
-          const res = await fetch('http://localhost:3001/api/execute/instance', {
+          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+          const res = await fetch(`${apiBase}/execute/instance`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

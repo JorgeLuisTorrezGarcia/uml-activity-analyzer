@@ -44,7 +44,8 @@ export const DynamicFormPanel: React.FC = () => {
     setIsLoadingHistory(true);
     try {
       const tokenLocal = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3001/api/execute/diagram/${dbDiagramId}/node/${activeNode.id}`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const res = await axios.get(`${apiBase}/execute/diagram/${dbDiagramId}/node/${activeNode.id}`, {
         headers: { Authorization: `Bearer ${tokenLocal}` }
       });
       setNodeHistory(res.data);
@@ -117,7 +118,8 @@ export const DynamicFormPanel: React.FC = () => {
           formPayload.append('files', file);
         });
 
-        const res = await axios.post('http://localhost:3001/api/execute/step', formPayload, {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+        const res = await axios.post(`${apiBase}/execute/step`, formPayload, {
           headers: { 
             Authorization: `Bearer ${tokenLocal}`,
             'Content-Type': 'multipart/form-data'
@@ -205,9 +207,12 @@ export const DynamicFormPanel: React.FC = () => {
             <React.Fragment>
               <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 500, alignSelf: 'center' }}>Archivos Adjuntos</div>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>
-                {payload.artifacts.map((url: string, i: number) => (
-                  <a key={i} href={url.startsWith('http') ? url : `http://localhost:3001${url}`} target="_blank" rel="noreferrer" style={{ color: '#ef4444', textDecoration: 'underline', fontSize: '12px' }}>Adjunto {i+1} 📎</a>
-                ))}
+                {payload.artifacts.map((url: string, i: number) => {
+                  const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+                  return (
+                    <a key={i} href={url.startsWith('http') ? url : `${rootUrl}${url}`} target="_blank" rel="noreferrer" style={{ color: '#ef4444', textDecoration: 'underline', fontSize: '12px' }}>Adjunto {i+1} 📎</a>
+                  );
+                })}
               </div>
             </React.Fragment>
           )}
@@ -399,9 +404,12 @@ export const DynamicFormPanel: React.FC = () => {
 
                 {entry.artifactsUrls && entry.artifactsUrls.length > 0 && (
                   <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                     {entry.artifactsUrls.map((url: string, i: number) => (
-                        <a key={i} href={url.startsWith('http') ? url : `http://localhost:3001${url}`} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Adjunto {i+1}</a>
-                     ))}
+                     {entry.artifactsUrls.map((url: string, i: number) => {
+                        const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+                        return (
+                           <a key={i} href={url.startsWith('http') ? url : `${rootUrl}${url}`} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Adjunto {i+1}</a>
+                        );
+                     })}
                   </div>
                 )}
               </div>

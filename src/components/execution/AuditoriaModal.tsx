@@ -23,7 +23,8 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3001/api/execute/diagram/${diagramId}/instances`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const res = await axios.get(`${apiBase}/execute/diagram/${diagramId}/instances`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInstances(res.data);
@@ -41,7 +42,8 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
     try {
       const token = localStorage.getItem('token');
       // 1. Pedir el markdown a la IA
-      const res = await axios.post(`http://localhost:3001/api/execute/instance/${instanceId}/ai-report`, {}, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const res = await axios.post(`${apiBase}/execute/instance/${instanceId}/ai-report`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
