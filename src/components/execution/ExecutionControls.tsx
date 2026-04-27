@@ -20,12 +20,13 @@ export const ExecutionControls: React.FC = () => {
       if (startNode) {
         setIsLoading(true);
         try {
+          const tokenLocal = localStorage.getItem('token');
           const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
           const res = await fetch(`${apiBase}/execute/instance`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${tokenLocal}`
             },
             body: JSON.stringify({ diagramId: dbDiagramId })
           });
