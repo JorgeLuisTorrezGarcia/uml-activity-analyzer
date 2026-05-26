@@ -3,17 +3,20 @@ import { useParams } from 'react-router-dom';
 import { useExecutionStore } from '../../store/executionStore';
 import { useDiagramStore } from '../../store/diagramStore';
 import axios from 'axios';
+import { useAuthStore } from '../../store/authStore';
 
 export const DynamicFormPanel: React.FC = () => {
   const { id: dbDiagramId } = useParams<{ id: string }>();
   const { tokens, moveToken, endExecution } = useExecutionStore();
   const state = useDiagramStore(s => s.state);
+  const user = useAuthStore(s => s.user);
   
   const [jsonText, setJsonText] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [filesData, setFilesData] = useState<Record<string, File>>({});
-  const [errorObj, setErrorObj] = useState<string>('');
+  const [errorObj, setErrorObj] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<{url: string, name: string} | null>(null);
   
   const [activeTab, setActiveTab] = useState<'actual' | 'history'>('actual');
   const [nodeHistory, setNodeHistory] = useState<any[]>([]);
@@ -66,6 +69,10 @@ export const DynamicFormPanel: React.FC = () => {
   const nodeType = activeNode.type;
   const schema = activeNode.executionConfig?.formSchema || [];
   const hasSchema = schema.length > 0;
+
+  // Verificación de permisos de carril (Lane)
+  const lane = state.lanes.find(l => l.id === activeNode.laneId);
+  const hasPermission = !lane || !lane.label || (user && user.name.toLowerCase() === lane.label.toLowerCase());
   
   const handleAdvance = async (forcedPathToId?: string) => {
     let parsedPayload = {};
@@ -113,6 +120,14 @@ export const DynamicFormPanel: React.FC = () => {
         formPayload.append('laneId', activeNode.laneId || '');
         formPayload.append('formData', JSON.stringify(parsedPayload));
 
+        // Enviamos el token activo para que el backend actualice activeTokens
+        const nextNodeId = state.arrows.find(a => a.fromId === activeNode.id)?.toId || 'end';
+        formPayload.append('activeTokens', JSON.stringify([{ 
+          tokenId: activeToken.id, 
+          currentNodeId: nextNodeId,
+          laneId: activeNode.laneId || null
+        }]));
+
         // Subir los filesData
         Object.values(filesData).forEach(file => {
           formPayload.append('files', file);
@@ -158,7 +173,19 @@ export const DynamicFormPanel: React.FC = () => {
       moveToken(activeToken.id, outgoingArrows[0].toId, outgoingData);
     } else {
       endExecution(activeToken.id);
-      alert('¡Ejecución Finalizada Exitosamente!');
+      
+      // Marcar ejecución como finalizada en el backend
+      try {
+        const tokenLocal = localStorage.getItem('token');
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+        await axios.put(`${apiBase}/execute/instance/${activeToken.id}/complete`, {}, {
+          headers: { Authorization: `Bearer ${tokenLocal}` }
+        });
+        alert('¡Ejecución Finalizada Exitosamente y Guardada!');
+      } catch (err) {
+        console.error('Error al finalizar la instancia en backend:', err);
+        alert('¡Ejecución Finalizada localmente (error al guardar en la nube)!');
+      }
     }
   };
 
@@ -193,7 +220,7 @@ export const DynamicFormPanel: React.FC = () => {
           {entries.map(([key, value]) => {
             let displayValue: React.ReactNode = String(value);
             if (typeof value === 'string' && value.startsWith('http')) {
-              displayValue = <a href={value} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>Ver Archivo 📎</a>;
+              displayValue = <button onClick={() => setPreviewDoc({ url: value, name: key })} style={{ color: '#3b82f6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Ver Archivo 📎</button>;
             }
             return (
               <React.Fragment key={key}>
@@ -209,8 +236,17 @@ export const DynamicFormPanel: React.FC = () => {
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>
                 {payload.artifacts.map((url: string, i: number) => {
                   const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+                  const fullUrl = url.startsWith('http') ? url : `${rootUrl}${url}`;
+                  // Extraer nombre del path de S3
+                  const rawName = decodeURIComponent(fullUrl.split('?')[0].split('/').pop() || `Adjunto ${i+1}`);
                   return (
-                    <a key={i} href={url.startsWith('http') ? url : `${rootUrl}${url}`} target="_blank" rel="noreferrer" style={{ color: '#ef4444', textDecoration: 'underline', fontSize: '12px' }}>Adjunto {i+1} 📎</a>
+                    <button 
+                      key={i} 
+                      onClick={() => setPreviewDoc({ url: fullUrl, name: rawName })}
+                      style={{ background: 'transparent', border: 'none', color: '#ef4444', textDecoration: 'underline', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                    >
+                      {rawName} 📎
+                    </button>
                   );
                 })}
               </div>
@@ -224,10 +260,10 @@ export const DynamicFormPanel: React.FC = () => {
   return (
     <div style={{
       position: 'absolute',
-      top: 0,
+      top: 55,
       right: 0,
       width: '360px',
-      height: '100%',
+      height: '95%',
       backgroundColor: '#0f172a',
       borderLeft: '1px solid #334155',
       boxShadow: '-4px 0 15px rgba(0,0,0,0.5)',
@@ -262,7 +298,19 @@ export const DynamicFormPanel: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
         {/* TABLA DE DATOS N8N STYLE EN LUGAR DE PRE JSON */}
         {renderIncomingData(activeToken.payload)}
-        {!isDecision ? (
+
+        {!hasPermission ? (
+          <div style={{ background: '#334155', padding: '20px', borderRadius: '8px', textAlign: 'center', marginTop: '20px' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px' }}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc' }}>Acceso Restringido</h3>
+            <p style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '8px' }}>
+              Esperando a que el responsable <strong>{lane?.label}</strong> complete esta tarea.
+            </p>
+          </div>
+        ) : !isDecision ? (
           <>
             {hasSchema ? (
               // RENDER DEL FORMULARIO DINÁMICO
@@ -406,8 +454,9 @@ export const DynamicFormPanel: React.FC = () => {
                   <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                      {entry.artifactsUrls.map((url: string, i: number) => {
                         const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+                        const fullUrl = url.startsWith('http') ? url : `${rootUrl}${url}`;
                         return (
-                           <a key={i} href={url.startsWith('http') ? url : `${rootUrl}${url}`} target="_blank" rel="noreferrer" style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', textDecoration: 'none' }}>Adjunto {i+1}</a>
+                           <button key={i} onClick={() => setPreviewDoc({ url: fullUrl, name: `Adjunto ${i+1}` })} style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>Adjunto {i+1}</button>
                         );
                      })}
                   </div>
@@ -415,6 +464,33 @@ export const DynamicFormPanel: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Visor Modal de Adjuntos */}
+      {previewDoc && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155' }}>
+            <span style={{ color: 'white', fontWeight: 'bold' }}>Visor: {previewDoc.name}</span>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <span style={{ color: '#64748b', fontSize: '12px' }}>Si el visor no carga, usa el botón "Descargar".</span>
+              <a href={previewDoc.url} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+                Descargar Directo ↗
+              </a>
+              <button onClick={() => setPreviewDoc(null)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '4px', cursor: 'pointer' }}>
+                Cerrar Visor
+              </button>
+            </div>
+          </div>
+          <iframe 
+            src={
+              previewDoc.name.match(/\.(docx|doc|xlsx|xls|pptx|ppt)$/i)
+              ? `https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.url)}&embedded=true`
+              : `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/documents/proxy?url=${encodeURIComponent(previewDoc.url)}&token=${localStorage.getItem('token')}`
+            } 
+            style={{ width: '100%', flex: 1, border: 'none', background: '#e2e8f0' }}
+            title="Visor"
+          />
         </div>
       )}
     </div>

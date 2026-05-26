@@ -20,6 +20,12 @@ export const MainNavbar: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <span 
+          onClick={() => navigate('/data-explorer')} 
+          style={{ fontSize: '13px', color: '#60a5fa', cursor: 'pointer', fontWeight: 600, border: '1px solid #3b82f6', padding: '6px 12px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.1)' }}
+        >
+          📊 Explorador CSV
+        </span>
         <NotificationBell />
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

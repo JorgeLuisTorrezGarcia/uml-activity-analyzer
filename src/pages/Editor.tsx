@@ -11,6 +11,8 @@ import { DynamicFormPanel } from '../components/execution/DynamicFormPanel';
 import { NodeConfigPanel } from '../components/execution/NodeConfigPanel';
 import { useExecutionStore } from '../store/executionStore';
 import { AuditoriaModal } from '../components/execution/AuditoriaModal';
+import { DocumentRepository } from '../components/documents/DocumentRepository';
+import { AIPredictionModal } from '../components/execution/AIPredictionPanel';
 
 const Editor: React.FC = () => {
   const { state, setState, activeConfigNodeId, isLeftPanelOpen, isRightPanelOpen, toggleLeftPanel, toggleRightPanel } = useDiagramStore();
@@ -21,11 +23,15 @@ const Editor: React.FC = () => {
 
   const [diagramName, setDiagramName] = React.useState(state.name || 'Diagrama sin título');
   const [isAiModalOpen, setIsAiModalOpen] = React.useState(false);
-  const [aiPrompt, setAiPrompt] = React.useState('');
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isRecording, setIsRecording] = React.useState(false);
   const [isAuditoriaModalOpen, setIsAuditoriaModalOpen] = React.useState(false);
+  const [isDocsModalOpen, setIsDocsModalOpen] = React.useState(false);
+  const [isPredictionModalOpen, setIsPredictionModalOpen] = React.useState(false);
+  const [aiPrompt, setAiPrompt] = React.useState('');
+  const [activeInstances, setActiveInstances] = React.useState<any[]>([]);
+  const [activeInstanceBanner, setActiveInstanceBanner] = React.useState<string | null>(null);
   
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const [inviteEmail, setInviteEmail] = React.useState('');
@@ -33,6 +39,31 @@ const Editor: React.FC = () => {
   React.useEffect(() => {
     if (state.name) setDiagramName(state.name);
   }, [state.name]);
+
+  // Cargar instancias activas al montar (para colaboración)
+  React.useEffect(() => {
+    if (!id) return;
+    const fetchActiveInstances = async () => {
+      try {
+        const tokenLocal = localStorage.getItem('token');
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+        const res = await fetch(`${apiBase}/execute/diagram/${id}/active`, {
+          headers: { Authorization: `Bearer ${tokenLocal}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setActiveInstances(data);
+          if (data.length > 0) {
+            setActiveInstanceBanner(`🔴 Ejecución en curso por ${data[0].startedBy?.name || 'otro usuario'}`);
+          }
+        }
+      } catch (e) { /* sin conexión */ }
+    };
+    fetchActiveInstances();
+    // Revalidar cada 30 segundos
+    const interval = setInterval(fetchActiveInstances, 30000);
+    return () => clearInterval(interval);
+  }, [id]);
 
   if (!id) return null;
 
@@ -166,6 +197,15 @@ const Editor: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {executionMode === 'play' && (
+            <button 
+              className="header-action-btn"
+              style={{ borderColor: '#a855f7', color: '#a855f7' }}
+              onClick={() => setIsPredictionModalOpen(true)}
+            >
+              🔮 Predicción IA
+            </button>
+          )}
           <button 
             className="header-action-btn" 
             onClick={handleSave} 
@@ -179,6 +219,22 @@ const Editor: React.FC = () => {
             {isSaving ? 'Guardando...' : 'Guardar'}
           </button>
           
+          <button 
+            className="header-action-btn"
+            style={{ borderColor: '#8b5cf6', color: '#8b5cf6' }}
+            onClick={() => navigate(`/d/${id}/metrics`)}
+          >
+            📊 Dashboard KPI
+          </button>
+
+          <button 
+            className="header-action-btn"
+            style={{ borderColor: '#3b82f6', color: '#3b82f6' }}
+            onClick={() => setIsDocsModalOpen(true)}
+          >
+            🗂️ Docs
+          </button>
+
           <button 
             className="header-action-btn"
             style={{ borderColor: '#10b981', color: '#10b981' }}
@@ -204,6 +260,8 @@ const Editor: React.FC = () => {
             </svg>
             AI Assistant
           </button>
+
+          
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
             <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
@@ -233,8 +291,33 @@ const Editor: React.FC = () => {
         {/* WORKSPACE (CANVAS) */}
         <div id="grid-container" className="workspace-container">
           <DiagramStage roomId={id} />
-          <div className="status-bar">
-            {state.nodes.length} nodos | {state.arrows.length} flechas | {state.lanes.length} calles
+          <div className="status-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{state.nodes.length} nodos | {state.arrows.length} flechas | {state.lanes.length} calles</span>
+            {activeInstanceBanner && executionMode !== 'play' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600, animation: 'pulse 2s infinite' }}>
+                  {activeInstanceBanner}
+                </span>
+                <button
+                  onClick={() => {
+                    // Unirse a la instancia activa en modo observador/participante
+                    const inst = activeInstances[0];
+                    if (inst && inst.activeTokens && inst.activeTokens.length > 0) {
+                      const { startExecution, setMode } = useExecutionStore.getState();
+                      setMode('play');
+                      const tok = inst.activeTokens[0];
+                      startExecution(tok.currentNodeId, inst.id);
+                    }
+                  }}
+                  style={{
+                    fontSize: '11px', padding: '3px 10px', background: '#ef4444',
+                    color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'
+                  }}
+                >
+                  Unirse ▶
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -376,8 +459,14 @@ const Editor: React.FC = () => {
       {executionMode === 'play' && <DynamicFormPanel />}
       {executionMode === 'edit' && activeConfigNodeId && <NodeConfigPanel />}
       
+      {/* MODAL PREDICCION IA (manual) */}
+      {isPredictionModalOpen && <AIPredictionModal onClose={() => setIsPredictionModalOpen(false)} />}
+      
       {/* MODAL DE AUDITORIA Y REPORTES */}
       {isAuditoriaModalOpen && <AuditoriaModal diagramId={id} onClose={() => setIsAuditoriaModalOpen(false)} />}
+      
+      {/* REPOSITORIO DE DOCUMENTOS */}
+      {isDocsModalOpen && <DocumentRepository onClose={() => setIsDocsModalOpen(false)} />}
     </div>
   );
 };

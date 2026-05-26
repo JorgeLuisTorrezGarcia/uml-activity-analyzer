@@ -28,7 +28,15 @@ export const ExecutionControls: React.FC = () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${tokenLocal}`
             },
-            body: JSON.stringify({ diagramId: dbDiagramId })
+            body: JSON.stringify({ 
+              diagramId: dbDiagramId,
+              // Enviamos el activeToken inicial
+              activeTokens: JSON.stringify([{
+                 tokenId: "temp-id", // Se reemplazará con el ID real devuelto
+                 currentNodeId: startNode.id,
+                 laneId: startNode.laneId || null
+              }])
+            })
           });
           
           if (!res.ok) {
