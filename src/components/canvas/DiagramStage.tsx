@@ -209,7 +209,7 @@ export const DiagramStage: React.FC<{ roomId: string }> = ({ roomId }) => {
             const isExecutionActive = !!activeToken;
             const executionStatus = activeToken?.status;
 
-            const handleNodeDoubleClick = (e: any) => {
+            const handleNodeDoubleClick = () => {
               if (executionStore.mode === 'play') {
                 if (isExecutionActive) {
                    // Reservado. Delegado a DynamicFormPanel que observa el store.

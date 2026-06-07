@@ -2,18 +2,70 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { DocxEditorModal } from './DocxEditorModal';
+import { io } from 'socket.io-client';
 
 export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { id: diagramId } = useParams<{ id: string }>();
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDocUrl, setSelectedDocUrl] = useState<{url: string, name: string} | null>(null);
+  const [selectedDocUrl, setSelectedDocUrl] = useState<{
+    url: string;
+    name: string;
+    versionId: string;
+    status: string;
+  } | null>(null);
   const [editingDoc, setEditingDoc] = useState<{id: string, url: string, name: string} | null>(null);
 
   const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
 
+  const handleUpdateStatus = async (versionId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      await axios.put(
+        `${apiBase}/documents/version/${versionId}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (selectedDocUrl && selectedDocUrl.versionId === versionId) {
+        setSelectedDocUrl({ ...selectedDocUrl, status: newStatus });
+      }
+      
+      await fetchDocuments();
+    } catch (error: any) {
+      console.error(error);
+      alert('Error al actualizar el estado del documento: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
+  }, [diagramId]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !diagramId) return;
+
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001', {
+      auth: { token }
+    });
+
+    socket.emit('join-room', diagramId);
+
+    socket.on('document-status-updated', ({ versionId, status: newStatus }: { versionId: string; status: string }) => {
+      fetchDocuments();
+      setSelectedDocUrl(current => {
+        if (current && current.versionId === versionId) {
+          return { ...current, status: newStatus };
+        }
+        return current;
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [diagramId]);
 
   const fetchDocuments = async () => {
@@ -68,6 +120,25 @@ export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose 
     }
   };
 
+  const handleSaveHtmlVersion = async (documentId: string, contentHtml: string, docName: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      await axios.post(`${apiBase}/documents/${documentId}/version-html`, {
+        contentHtml,
+        docName
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert('Nueva versión generada y guardada con éxito.');
+      await fetchDocuments();
+    } catch (error: any) {
+      console.error(error);
+      alert('Error al guardar la nueva versión del documento: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   return (
     <div style={{
       position: 'fixed', top: 0, right: 0, width: '450px', height: '100vh',
@@ -111,7 +182,19 @@ export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose 
                   {doc.versions.map((v: any, index: number) => (
                     <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', borderBottom: index < doc.versions.length - 1 ? '1px solid #334155' : 'none', paddingBottom: index < doc.versions.length - 1 ? '8px' : 0 }}>
                       <div>
-                        <div style={{ color: '#3b82f6', fontWeight: 'bold' }}>v{v.versionNumber}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>v{v.versionNumber}</span>
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            background: v.status === 'ACEPTADO' ? '#10b981' : v.status === 'RECHAZADO' ? '#ef4444' : '#f59e0b',
+                            color: 'white'
+                          }}>
+                            {v.status === 'ACEPTADO' ? 'Aceptado' : v.status === 'RECHAZADO' ? 'Rechazado' : 'En Revisión'}
+                          </span>
+                        </div>
                         <div style={{ color: '#94a3b8', fontSize: '11px' }}>Por {v.uploadedBy.name}</div>
                         <div style={{ color: '#64748b', fontSize: '11px' }}>{new Date(v.createdAt).toLocaleString()}</div>
                       </div>
@@ -120,7 +203,12 @@ export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose 
                            Bajar
                         </a>
                         <button 
-                          onClick={() => setSelectedDocUrl({url: v.url, name: doc.name})}
+                          onClick={() => setSelectedDocUrl({
+                            url: v.url,
+                            name: doc.name,
+                            versionId: v.id,
+                            status: v.status
+                          })}
                           style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                         >
                           Ver
@@ -146,10 +234,42 @@ export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose 
       {/* Visor Modal (Fullscreen) */}
       {selectedDocUrl && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '16px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155' }}>
-            <span style={{ color: 'white', fontWeight: 'bold' }}>Visor: {selectedDocUrl.name}</span>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>Si el visor no carga, usa el botón "Descargar" y sube una nueva versión luego de editar.</span>
+          <div style={{ padding: '16px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ color: 'white', fontWeight: 'bold' }}>Visor: {selectedDocUrl.name}</span>
+              <span style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                background: selectedDocUrl.status === 'ACEPTADO' ? '#10b981' : selectedDocUrl.status === 'RECHAZADO' ? '#ef4444' : '#f59e0b',
+                color: 'white'
+              }}>
+                {selectedDocUrl.status === 'ACEPTADO' ? 'Aceptado' : selectedDocUrl.status === 'RECHAZADO' ? 'Rechazado' : 'En Revisión'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button 
+                onClick={() => handleUpdateStatus(selectedDocUrl.versionId, 'ACEPTADO')}
+                style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}
+              >
+                Aceptar
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus(selectedDocUrl.versionId, 'RECHAZADO')}
+                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}
+              >
+                Rechazar
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus(selectedDocUrl.versionId, 'EN_REVISION')}
+                style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}
+              >
+                En Revisión
+              </button>
+
+              <div style={{ width: '1px', height: '20px', background: '#334155' }} />
+
               <a href={selectedDocUrl.url} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
                 Descargar Directo ↗
               </a>
@@ -169,11 +289,13 @@ export const DocumentRepository: React.FC<{ onClose: () => void }> = ({ onClose 
       {/* Editor DOCX (Implementación a continuación) */}
       {editingDoc && (
         <DocxEditorModal 
+           diagramId={diagramId || ''}
+           documentId={editingDoc.id}
            docUrl={editingDoc.url} 
            docName={editingDoc.name} 
            onClose={() => setEditingDoc(null)} 
-           onSave={async (newFile: File) => {
-             await handleFileUploadVersion(editingDoc.id, newFile);
+           onSave={async (contentHtml: string) => {
+             await handleSaveHtmlVersion(editingDoc.id, contentHtml, editingDoc.name);
              setEditingDoc(null);
            }}
         />

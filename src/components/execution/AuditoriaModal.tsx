@@ -40,7 +40,7 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
     const opt = {
       margin: 10,
       filename: `Backlog_${auditData?.diagram?.name || 'Diagrama'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const }
     };
@@ -88,10 +88,11 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
 
     // Sección: Documentos
     lines.push('=== DOCUMENTOS ===');
-    lines.push('Nombre Documento,Versión,Subido Por,Email,Fecha,URL');
+    lines.push('Nombre Documento,Versión,Estado,Subido Por,Email,Fecha,URL');
     (auditData.documents || []).forEach((doc: any) => {
       (doc.versions || []).forEach((v: any) => {
-        lines.push(`"${doc.name}","v${v.versionNumber}","${v.uploadedBy.name}","${v.uploadedBy.email}","${new Date(v.createdAt).toLocaleString()}","${v.url}"`);
+        const statusText = v.status === 'ACEPTADO' ? 'Aceptado' : v.status === 'RECHAZADO' ? 'Rechazado' : 'En Revisión';
+        lines.push(`"${doc.name}","v${v.versionNumber}","${statusText}","${v.uploadedBy.name}","${v.uploadedBy.email}","${new Date(v.createdAt).toLocaleString()}","${v.url}"`);
       });
     });
 
@@ -345,6 +346,7 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
                             <tr>
                               <th style={thStyle}>Nombre del Documento</th>
                               <th style={thStyle}>Versión</th>
+                              <th style={thStyle}>Estado</th>
                               <th style={thStyle}>Subido Por</th>
                               <th style={thStyle}>Email</th>
                               <th style={thStyle}>Fecha</th>
@@ -361,6 +363,14 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({ diagramId, onClo
                                   <td style={tdStyle}>
                                     <span style={{ background: vIdx === 0 ? '#3b82f6' : '#475569', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600 }}>
                                       v{v.versionNumber}
+                                    </span>
+                                  </td>
+                                  <td style={tdStyle}>
+                                    <span style={{
+                                      background: v.status === 'ACEPTADO' ? '#10b981' : v.status === 'RECHAZADO' ? '#ef4444' : '#f59e0b',
+                                      color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600
+                                    }}>
+                                      {v.status === 'ACEPTADO' ? 'Aceptado' : v.status === 'RECHAZADO' ? 'Rechazado' : 'En Revisión'}
                                     </span>
                                   </td>
                                   <td style={tdStyle}>{v.uploadedBy.name}</td>

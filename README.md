@@ -60,6 +60,7 @@ Nuestra herramienta depende de Gemini para la auto-construcción.
 ```bash
 # 1. Instalar dependencias del CLI React (Vite)
 npm install
+npm install --legacy-peer-deps
 
 # 2. Levantar el Front-End (Puerto Automático VITE)
 npm run dev

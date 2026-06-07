@@ -172,7 +172,7 @@ export const MetricsDashboard: React.FC = () => {
                 <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${(val/1000).toFixed(0)}s`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
-                  formatter={(value: number) => [`${(value / 1000).toFixed(1)} seg`, 'Tiempo Promedio']}
+                  formatter={(value: any) => [`${(Number(value) / 1000).toFixed(1)} seg`, 'Tiempo Promedio']}
                 />
                 <Legend />
                 <Bar dataKey="averageTimeMs" fill="#3b82f6" name="Tiempo Promedio (ms)" radius={[4, 4, 0, 0]} />

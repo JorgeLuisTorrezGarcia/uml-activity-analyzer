@@ -24,7 +24,6 @@ export const ActivityNode: React.FC<NodeProps> = ({
   isConnecting,
   activePort,
   isExecutionActive,
-  executionStatus,
   onSelect,
   onDblClick,
   onConnectStart,

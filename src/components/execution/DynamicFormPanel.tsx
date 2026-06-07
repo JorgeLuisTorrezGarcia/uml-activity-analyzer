@@ -72,7 +72,7 @@ export const DynamicFormPanel: React.FC = () => {
 
   // Verificación de permisos de carril (Lane)
   const lane = state.lanes.find(l => l.id === activeNode.laneId);
-  const hasPermission = !lane || !lane.label || (user && user.name.toLowerCase() === lane.label.toLowerCase());
+  const hasPermission = !lane || !lane.title || (user && user.name.toLowerCase() === lane.title.toLowerCase());
   
   const handleAdvance = async (forcedPathToId?: string) => {
     let parsedPayload = {};
@@ -307,7 +307,7 @@ export const DynamicFormPanel: React.FC = () => {
             </svg>
             <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc' }}>Acceso Restringido</h3>
             <p style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '8px' }}>
-              Esperando a que el responsable <strong>{lane?.label}</strong> complete esta tarea.
+              Esperando a que el responsable <strong>{lane?.title}</strong> complete esta tarea.
             </p>
           </div>
         ) : !isDecision ? (
