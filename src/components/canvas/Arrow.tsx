@@ -3,6 +3,11 @@ import { Arrow as KonvaArrow, Text, Group, Circle } from 'react-konva';
 import { DiagramArrow, DiagramNode, buildOrthogonalPath } from '../../types/diagram';
 import { useDiagramStore } from '../../store/diagramStore';
 
+/* ══════════════════════════════════════════════════
+   Arrow — Conexiones
+   Sobre fondo blanco — paleta retro-vintage
+   ══════════════════════════════════════════════════ */
+
 interface ArrowProps {
   arrow: DiagramArrow;
   fromNode?: DiagramNode;
@@ -10,6 +15,10 @@ interface ArrowProps {
   isSelected: boolean;
   onSelect: (e: any) => void;
 }
+
+const ARROW_COLOR = 'rgba(116, 69, 119, 0.6)'; // Purple semi-transparente
+const ARROW_SELECTED = 'rgb(116, 69, 119)';     // Purple sólido
+const TEXT_COLOR = 'rgb(80, 45, 82)';          // Purple muy oscuro
 
 export const Arrow: React.FC<ArrowProps> = ({
   arrow,
@@ -28,7 +37,6 @@ export const Arrow: React.FC<ArrowProps> = ({
     arrow.waypoints || []
   );
 
-  // Mapeamos los puntos para renderizar pequeñas anclas si está seleccionado
   const anchorPoints: { x: number; y: number; originalIndex: number }[] = [];
   for (let i = 2; i < points.length - 2; i += 2) {
     anchorPoints.push({ x: points[i], y: points[i + 1], originalIndex: i });
@@ -37,12 +45,10 @@ export const Arrow: React.FC<ArrowProps> = ({
   const handleDragAnchor = (e: any, index: number) => {
     e.cancelBubble = true;
     
-    // Si no teníamos waypoints, inicializamos con los calculados
     let currentWaypoints = arrow.waypoints && arrow.waypoints.length > 0 
       ? [...arrow.waypoints] 
       : anchorPoints.map((p, idx) => ({ id: `wp-${idx}`, x: p.x, y: p.y }));
 
-    // Buscamos cuál es el waypoint correspondiente (index / 2 - 1)
     const wpIndex = (index / 2) - 1;
     if (currentWaypoints[wpIndex]) {
       currentWaypoints[wpIndex].x = e.target.x();
@@ -51,12 +57,8 @@ export const Arrow: React.FC<ArrowProps> = ({
     }
   };
 
-  const handleDragEndAnchor = () => {
-    // Para que sockets u otras optimizaciones detecten el fin
-    // En el futuro, enviar broadcast aquí.
-  };
+  const handleDragEndAnchor = () => {};
 
-  // Punto medio para etiqueta
   const midIndex = Math.floor(points.length / 4) * 2;
   const mx = points[midIndex] || 0;
   const my = points[midIndex + 1] || 0;
@@ -66,9 +68,9 @@ export const Arrow: React.FC<ArrowProps> = ({
       <KonvaArrow
         id={arrow.id}
         points={points}
-        stroke={isSelected ? '#3b82f6' : 'rgba(255, 255, 255, 0.4)'}
-        fill={isSelected ? '#3b82f6' : 'rgba(255, 255, 255, 0.4)'}
-        strokeWidth={2}
+        stroke={isSelected ? ARROW_SELECTED : ARROW_COLOR}
+        fill={isSelected ? ARROW_SELECTED : ARROW_COLOR}
+        strokeWidth={isSelected ? 2.5 : 2}
         pointerLength={10}
         pointerWidth={10}
         hitStrokeWidth={15}
@@ -78,10 +80,12 @@ export const Arrow: React.FC<ArrowProps> = ({
         text={arrow.label || '...'}
         x={mx + 5}
         y={my - 15}
-        fill={arrow.label ? "white" : "transparent"}
+        fill={arrow.label ? TEXT_COLOR : "transparent"}
         fontSize={12}
+        fontFamily="'DM Sans', system-ui, sans-serif"
+        fontWeight={600}
         onMouseEnter={(e) => {
-          if (!arrow.label) (e.target as any).fill('rgba(255,255,255,0.3)');
+          if (!arrow.label) (e.target as any).fill('rgba(116, 69, 119, 0.3)');
           const container = e.target.getStage()?.container();
           if (container) container.style.cursor = 'pointer';
         }}
@@ -99,16 +103,15 @@ export const Arrow: React.FC<ArrowProps> = ({
         }}
       />
       
-      {/* Waypoints arrastrables */}
       {isSelected && anchorPoints.map((pt, i) => (
         <Circle
           key={i}
           x={pt.x}
           y={pt.y}
           radius={6}
-          fill="#3b82f6"
-          stroke="white"
-          strokeWidth={1}
+          fill="rgb(240, 233, 182)"
+          stroke={ARROW_SELECTED}
+          strokeWidth={1.5}
           draggable
           onDragMove={(e) => handleDragAnchor(e, pt.originalIndex)}
           onDragEnd={handleDragEndAnchor}

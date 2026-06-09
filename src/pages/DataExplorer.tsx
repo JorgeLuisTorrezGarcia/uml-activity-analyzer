@@ -126,26 +126,30 @@ export const DataExplorer: React.FC = () => {
     : [];
 
   return (
-    <div style={{ background: '#0f172a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="app-layout" style={{ background: 'var(--bg-base)', overflowY: 'auto' }}>
       <MainNavbar />
 
-      <main style={{ flex: 1, padding: '40px', maxWidth: '1200px', margin: '0 auto', width: '100%', overflowY: 'auto', maxHeight: 'calc(100vh - 56px)' }}>
+      <main style={{ flex: 1, padding: '40px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         
         {/* Header de la sección */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <div>
-            <h2 style={{ fontSize: '24px', margin: 0, fontWeight: 700 }}>📊 Explorador de Datos y Ciencia de Datos CSV</h2>
-            <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '14px' }}>Sube tu dataset (ej: subastas, ventas) para auditar, calcular métricas y visualizar tendencias.</p>
+            <h2 style={{ fontSize: '28px', margin: 0, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--txt-primary)' }}>
+              📊 Explorador de Datos y Ciencia de Datos CSV
+            </h2>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--txt-secondary)', fontSize: '15px' }}>
+              Sube tu dataset para auditar, calcular métricas y visualizar tendencias con estilo retro.
+            </p>
           </div>
-          <Link to="/dashboard" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px', border: '1px solid #334155', padding: '8px 16px', borderRadius: '6px' }}>
+          <Link to="/dashboard" className="saas-button secondary" style={{ width: 'auto', textDecoration: 'none' }}>
             ← Volver al Dashboard
           </Link>
         </div>
 
         {/* Carga del archivo */}
-        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '24px', display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '30px' }}>
+        <div className="saas-card" style={{ padding: '24px', display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
           <div style={{ position: 'relative', overflow: 'hidden', display: 'inline-block' }}>
-            <button style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+            <button className="saas-button" style={{ padding: '12px 24px' }}>
               📁 Elegir archivo CSV
             </button>
             <input 
@@ -155,24 +159,27 @@ export const DataExplorer: React.FC = () => {
               style={{ position: 'absolute', left: 0, top: 0, opacity: 0, cursor: 'pointer', height: '100%', width: '100%' }}
             />
           </div>
-          <span style={{ color: fileName ? '#3b82f6' : '#64748b', fontSize: '14px', fontWeight: fileName ? 'bold' : 'normal' }}>
+          <span style={{ color: fileName ? 'var(--clr-teal)' : 'var(--txt-muted)', fontSize: '14px', fontWeight: fileName ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
             {fileName || 'Ningún archivo seleccionado.'}
           </span>
         </div>
 
         {csvData && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-start' }}>
             
             {/* PANEL IZQUIERDO: COLUMNAS Y ESTADÍSTICAS */}
-            <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               {/* Selector de Columna */}
-              <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-                <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#e2e8f0', fontWeight: 600 }}>1. Elige una Columna Numérica</h3>
+              <div className="saas-card" style={{ padding: '24px' }}>
+                <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+                  1. Elige una Columna Numérica
+                </h3>
                 <select 
+                  className="saas-input"
                   value={selectedColumn}
                   onChange={(e) => handleColumnSelect(e.target.value)}
-                  style={{ width: '100%', background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '10px 12px', outline: 'none', fontSize: '14px' }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <option value="">-- Seleccionar Columna --</option>
                   {csvData.headers.map((h, i) => (
@@ -183,37 +190,39 @@ export const DataExplorer: React.FC = () => {
 
               {/* Estadísticas */}
               {stats && (
-                <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-                  <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#e2e8f0', fontWeight: 600 }}>2. Estadísticas Descriptivas</h3>
+                <div className="saas-card" style={{ padding: '24px' }}>
+                  <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+                    2. Estadísticas Descriptivas
+                  </h3>
                   {!stats.isNumeric ? (
-                    <div style={{ color: '#ef4444', fontSize: '14px', background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ color: 'rgb(220,120,120)', fontSize: '14px', background: 'rgba(220,120,120,0.1)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(220,120,120,0.3)' }}>
                       ⚠️ La columna seleccionada no contiene datos numéricos válidos.
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Registros</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>{stats.count}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px' }}>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Registros</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--txt-primary)', fontFamily: 'var(--font-mono)' }}>{stats.count}</div>
                       </div>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Media</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#60a5fa', marginTop: '4px' }}>{stats.mean}</div>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Media</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--clr-teal)', fontFamily: 'var(--font-mono)' }}>{stats.mean}</div>
                       </div>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Mediana</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981', marginTop: '4px' }}>{stats.median}</div>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Mediana</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--clr-sage)', fontFamily: 'var(--font-mono)' }}>{stats.median}</div>
                       </div>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Desv. Est.</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f59e0b', marginTop: '4px' }}>{stats.stdDev}</div>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Desv. Est.</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--clr-yellow)', fontFamily: 'var(--font-mono)' }}>{stats.stdDev}</div>
                       </div>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Mínimo</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>{stats.min}</div>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Mínimo</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--clr-purple-light)', fontFamily: 'var(--font-mono)' }}>{stats.min}</div>
                       </div>
-                      <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>Máximo</div>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>{stats.max}</div>
+                      <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+                        <div className="label">Máximo</div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--clr-purple-light)', fontFamily: 'var(--font-mono)' }}>{stats.max}</div>
                       </div>
                     </div>
                   )}
@@ -222,46 +231,48 @@ export const DataExplorer: React.FC = () => {
             </div>
 
             {/* PANEL DERECHO: VISUALIZACIÓN Y TABLA */}
-            <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
               
               {/* Gráfico Recharts */}
               {stats && stats.isNumeric && (
-                <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                    <h3 style={{ margin: 0, fontSize: '15px', color: '#e2e8f0', fontWeight: 600 }}>Tendencia e Histograma (Muestra 50 filas)</h3>
-                    <div style={{ display: 'flex', gap: '8px', background: '#0f172a', padding: '3px', borderRadius: '6px', border: '1px solid #334155' }}>
+                <div className="saas-card" style={{ padding: '28px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+                      Tendencia e Histograma (Muestra 50 filas)
+                    </h3>
+                    <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                       <button 
                         onClick={() => setChartType('bar')}
-                        style={{ background: chartType === 'bar' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+                        style={{ background: chartType === 'bar' ? 'var(--clr-purple-mist)' : 'transparent', color: chartType === 'bar' ? 'var(--clr-yellow)' : 'var(--txt-secondary)', border: '1px solid', borderColor: chartType === 'bar' ? 'var(--clr-purple)' : 'transparent', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'var(--font-body)' }}
                       >
                         Barras
                       </button>
                       <button 
                         onClick={() => setChartType('line')}
-                        style={{ background: chartType === 'line' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+                        style={{ background: chartType === 'line' ? 'var(--clr-teal-mist)' : 'transparent', color: chartType === 'line' ? 'var(--clr-teal)' : 'var(--txt-secondary)', border: '1px solid', borderColor: chartType === 'line' ? 'rgba(132, 197, 177, 0.4)' : 'transparent', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'var(--font-body)' }}
                       >
                         Línea
                       </button>
                     </div>
                   </div>
                   
-                  <div style={{ height: '300px', width: '100%' }}>
+                  <div style={{ height: '320px', width: '100%' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       {chartType === 'bar' ? (
                         <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                          <XAxis dataKey="index" stroke="#64748b" fontSize={11} hide />
-                          <YAxis stroke="#64748b" fontSize={11} axisLine={false} tickLine={false} />
-                          <Tooltip cursor={{ fill: '#334155', opacity: 0.4 }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#3b82f6', color: '#f8fafc', borderRadius: '8px' }} />
-                          <Bar dataKey="valor" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
+                          <XAxis dataKey="index" stroke="var(--txt-muted)" fontSize={11} hide />
+                          <YAxis stroke="var(--txt-muted)" fontSize={11} axisLine={false} tickLine={false} fontFamily="var(--font-mono)" />
+                          <Tooltip cursor={{ fill: 'var(--clr-purple-mist)', opacity: 0.4 }} contentStyle={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border-default)', color: 'var(--txt-primary)', borderRadius: '8px', fontFamily: 'var(--font-mono)' }} />
+                          <Bar dataKey="valor" fill="var(--clr-purple-light)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       ) : (
                         <LineChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                          <XAxis dataKey="index" stroke="#64748b" fontSize={11} hide />
-                          <YAxis stroke="#64748b" fontSize={11} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#10b981', color: '#f8fafc', borderRadius: '8px' }} />
-                          <Line type="monotone" dataKey="valor" stroke="#10b981" strokeWidth={3} dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
+                          <XAxis dataKey="index" stroke="var(--txt-muted)" fontSize={11} hide />
+                          <YAxis stroke="var(--txt-muted)" fontSize={11} axisLine={false} tickLine={false} fontFamily="var(--font-mono)" />
+                          <Tooltip contentStyle={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--clr-teal)', color: 'var(--txt-primary)', borderRadius: '8px', fontFamily: 'var(--font-mono)' }} />
+                          <Line type="monotone" dataKey="valor" stroke="var(--clr-teal)" strokeWidth={3} dot={{ r: 3, fill: 'var(--clr-teal)', strokeWidth: 0 }} activeDot={{ r: 6, fill: 'var(--clr-yellow)' }} />
                         </LineChart>
                       )}
                     </ResponsiveContainer>
@@ -270,35 +281,38 @@ export const DataExplorer: React.FC = () => {
               )}
 
               {/* Vista previa de Tabla */}
-              <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '15px', color: '#e2e8f0', fontWeight: 600 }}>Vista Previa de Datos ({filteredRows.length} registros)</h3>
+              <div className="saas-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+                    Vista Previa de Datos ({filteredRows.length} registros)
+                  </h3>
                   <div style={{ position: 'relative' }}>
                     <input 
                       type="text" 
+                      className="saas-input"
                       placeholder="Buscar en datos..."
                       value={searchRowQuery}
                       onChange={(e) => setSearchRowQuery(e.target.value)}
-                      style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '8px 12px 8px 32px', fontSize: '13px', outline: 'none', width: '100%', minWidth: '200px' }}
+                      style={{ paddingLeft: '36px', minWidth: '240px' }}
                     />
-                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '14px' }}>🔍</span>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--txt-muted)', fontSize: '14px' }}>🔍</span>
                   </div>
                 </div>
 
-                <div style={{ overflowX: 'auto', maxHeight: '400px', border: '1px solid #334155', borderRadius: '8px', background: '#0f172a' }}>
+                <div style={{ overflowX: 'auto', maxHeight: '420px', border: '1px solid var(--border-default)', borderRadius: '10px', background: 'var(--bg-surface)' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', whiteSpace: 'nowrap' }}>
-                    <thead style={{ position: 'sticky', top: 0, zIndex: 1, background: '#0f172a' }}>
-                      <tr style={{ color: '#94a3b8', borderBottom: '2px solid #334155' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-default)' }}>
+                      <tr>
                         {csvData.headers.map((h, i) => (
-                          <th key={i} style={{ padding: '12px 16px', fontWeight: 600 }}>{h}</th>
+                          <th key={i} style={{ padding: '14px 18px', fontWeight: 600, color: 'var(--clr-teal)', fontFamily: 'var(--font-mono)', letterSpacing: '0.5px' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredRows.slice(0, 100).map((row, rowIdx) => (
-                        <tr key={rowIdx} style={{ borderBottom: '1px solid #1e293b', background: rowIdx % 2 === 0 ? '#0f172a' : '#1e293b', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#334155'} onMouseLeave={(e) => e.currentTarget.style.background = rowIdx % 2 === 0 ? '#0f172a' : '#1e293b'}>
+                        <tr key={rowIdx} style={{ borderBottom: '1px solid var(--border-subtle)', background: rowIdx % 2 === 0 ? 'var(--bg-surface)' : 'var(--bg-elevated)', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-overlay)'} onMouseLeave={(e) => e.currentTarget.style.background = rowIdx % 2 === 0 ? 'var(--bg-surface)' : 'var(--bg-elevated)'}>
                           {row.map((cell, cellIdx) => (
-                            <td key={cellIdx} style={{ padding: '10px 16px', color: '#cbd5e1' }}>{cell}</td>
+                            <td key={cellIdx} style={{ padding: '12px 18px', color: 'var(--txt-secondary)' }}>{cell}</td>
                           ))}
                         </tr>
                       ))}
@@ -306,7 +320,7 @@ export const DataExplorer: React.FC = () => {
                   </table>
                 </div>
                 {filteredRows.length > 100 && (
-                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', marginTop: '16px', background: '#0f172a', padding: '8px', borderRadius: '6px' }}>
+                  <div style={{ color: 'var(--txt-muted)', fontSize: '13px', textAlign: 'center', marginTop: '20px', fontStyle: 'italic' }}>
                     Mostrando solo las primeras 100 filas filtradas por rendimiento.
                   </div>
                 )}

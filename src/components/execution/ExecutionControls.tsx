@@ -30,9 +30,8 @@ export const ExecutionControls: React.FC = () => {
             },
             body: JSON.stringify({ 
               diagramId: dbDiagramId,
-              // Enviamos el activeToken inicial
               activeTokens: JSON.stringify([{
-                 tokenId: "temp-id", // Se reemplazará con el ID real devuelto
+                 tokenId: "temp-id",
                  currentNodeId: startNode.id,
                  laneId: startNode.laneId || null
               }])
@@ -54,7 +53,7 @@ export const ExecutionControls: React.FC = () => {
           }
         } catch (e) {
           console.warn("Ejecución local, Backend BPM no conectado o sin conexión");
-          startExecution(startNode.id); // Fallback absoluto (offline)
+          startExecution(startNode.id);
         }
         setIsLoading(false);
       } else {
@@ -66,85 +65,94 @@ export const ExecutionControls: React.FC = () => {
   return (
     <div style={{
       position: 'absolute',
-      bottom: '20px',
+      bottom: '24px',
       left: '50%',
       transform: 'translateX(-50%)',
-      backgroundColor: '#1e293b',
-      padding: '10px 20px',
-      borderRadius: '30px',
-      border: '1px solid #334155',
+      backgroundColor: 'var(--bg-elevated)',
+      padding: '12px 24px',
+      borderRadius: '32px',
+      border: '1px solid var(--border-default)',
       display: 'flex',
       gap: '16px',
       alignItems: 'center',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
-      zIndex: 100
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+      zIndex: 100,
+      fontFamily: 'var(--font-body)'
     }}>
       
       {/* Selector de Modo */}
-      <div style={{ display: 'flex', background: '#0f172a', padding: '4px', borderRadius: '20px' }}>
+      <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '4px', borderRadius: '24px', border: '1px solid var(--border-subtle)' }}>
         <button 
           onClick={() => mode !== 'edit' && toggleMode()}
           style={{
-            background: mode === 'edit' ? '#3b82f6' : 'transparent',
-            color: 'white',
+            background: mode === 'edit' ? 'var(--clr-purple-mist)' : 'transparent',
+            color: mode === 'edit' ? 'var(--clr-purple-light)' : 'var(--txt-secondary)',
             border: 'none',
-            padding: '6px 16px',
-            borderRadius: '16px',
+            padding: '8px 20px',
+            borderRadius: '20px',
             cursor: 'pointer',
             fontSize: '13px',
-            fontWeight: 500
+            fontWeight: 700,
+            transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)'
           }}>
           Editor
         </button>
         <button 
           onClick={() => mode !== 'play' && toggleMode()}
           style={{
-            background: mode === 'play' ? '#10b981' : 'transparent',
-            color: 'white',
+            background: mode === 'play' ? 'var(--clr-teal-mist)' : 'transparent',
+            color: mode === 'play' ? 'var(--clr-teal)' : 'var(--txt-secondary)',
             border: 'none',
-            padding: '6px 16px',
-            borderRadius: '16px',
+            padding: '8px 20px',
+            borderRadius: '20px',
             cursor: 'pointer',
             fontSize: '13px',
-            fontWeight: 500
+            fontWeight: 700,
+            transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)'
           }}>
           Simulador Activo
         </button>
       </div>
 
-      <div style={{ width: '1px', background: '#334155', height: '20px' }}></div>
+      <div style={{ width: '1px', background: 'var(--border-default)', height: '24px' }}></div>
 
-      {/* Control de Ejecución (sólo visible si está en modo play) */}
+      {/* Control de Ejecución */}
       <button 
         onClick={handlePlayPause}
         disabled={mode !== 'play' || isLoading}
         style={{
-          background: mode === 'play' ? (isRunning ? '#ef4444' : '#22c55e') : '#475569',
-          color: 'white',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: '20px',
+          background: mode === 'play' ? (isRunning ? 'rgba(220,120,120,0.15)' : 'var(--clr-sage-mist)') : 'var(--bg-surface)',
+          color: mode === 'play' ? (isRunning ? 'rgb(220,120,120)' : 'var(--clr-sage)') : 'var(--txt-muted)',
+          border: '1px solid',
+          borderColor: mode === 'play' ? (isRunning ? 'rgba(220,120,120,0.4)' : 'rgba(172, 207, 163, 0.4)') : 'var(--border-subtle)',
+          padding: '10px 20px',
+          borderRadius: '24px',
           cursor: (mode === 'play' && !isLoading) ? 'pointer' : 'not-allowed',
-          fontSize: '13px',
+          fontSize: '14px',
+          fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          opacity: isLoading ? 0.7 : 1
+          gap: '10px',
+          opacity: isLoading ? 0.7 : 1,
+          transition: 'all 0.2s',
+          fontFamily: 'var(--font-body)'
         }}
       >
         {isLoading ? (
           <>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" /></svg>
             Iniciando...
           </>
         ) : isRunning ? (
           <>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
             Detener
           </>
         ) : (
           <>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             Lanzar Token
           </>
         )}

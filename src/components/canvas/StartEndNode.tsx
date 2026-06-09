@@ -3,6 +3,11 @@ import { Circle, Group, Ring, Rect } from 'react-konva';
 import { DiagramNode, PortPosition } from '../../types/diagram';
 import { NodePorts } from './NodePorts';
 
+/* ══════════════════════════════════════════════════
+   StartEndNode — Nodos inicio/fin UML
+   Sobre fondo blanco — paleta retro-vintage
+   ══════════════════════════════════════════════════ */
+
 interface NodeProps {
   node: DiagramNode;
   isSelected: boolean;
@@ -14,6 +19,16 @@ interface NodeProps {
   onDragMove: (e: any) => void;
   onDragEnd: (e: any) => void;
 }
+
+/* Start: círculo sólido purple */
+const START_FILL     = 'rgb(116, 69, 119)';
+const START_STROKE_S = 'rgb(116, 69, 119)';   // selected stroke (purple glow)
+
+/* End: bullseye purple + anillo */
+const END_FILL       = 'rgb(80, 45, 82)';
+const END_RING       = 'rgb(116, 69, 119)';
+
+const SELECTED_GLOW  = 'rgb(116, 69, 119)';
 
 export const StartEndNode: React.FC<NodeProps> = ({
   node,
@@ -27,6 +42,8 @@ export const StartEndNode: React.FC<NodeProps> = ({
   onDragEnd,
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
+  const cx = node.width / 2;
+  const cy = node.height / 2;
 
   return (
     <Group
@@ -34,54 +51,62 @@ export const StartEndNode: React.FC<NodeProps> = ({
       x={node.x}
       y={node.y}
       draggable
-      onClick={(e) => {
-        e.cancelBubble = true;
-        onSelect(e);
-      }}
-      onTap={(e) => {
-        e.cancelBubble = true;
-        onSelect(e);
-      }}
+      onClick={e => { e.cancelBubble = true; onSelect(e); }}
+      onTap={e => { e.cancelBubble = true; onSelect(e); }}
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Invisible hitbox */}
-      <Rect
-        width={node.width}
-        height={node.height}
-        fill="transparent"
-      />
-      {/* Start Node: Solid Black Circle */}
+      {/* Hitbox invisible */}
+      <Rect width={node.width} height={node.height} fill="transparent" />
+
+      {/* ── INICIO: Círculo sólido purple ── */}
       {node.type === 'start' && (
-        <Circle
-          x={node.width / 2}
-          y={node.height / 2}
-          radius={25}
-          fill={node.color || "black"}
-          stroke={isSelected ? '#3b82f6' : 'white'}
-          strokeWidth={isSelected ? 2 : 1}
-        />
-      )}
-      
-      {/* End Node: Bullseye */}
-      {node.type === 'end' && (
         <>
-          <Ring
-            x={node.width / 2}
-            y={node.height / 2}
-            innerRadius={20}
-            outerRadius={25}
-            fill="white"
-            stroke={isSelected ? '#3b82f6' : 'black'}
-            strokeWidth={isSelected ? 2 : 1}
+          {/* Halo decorativo */}
+          <Circle
+            x={cx} y={cy} radius={30}
+            fill="rgba(116,69,119,0.12)"
           />
           <Circle
-            x={node.width / 2}
-            y={node.height / 2}
-            radius={15}
-            fill={node.color || "black"}
+            x={cx} y={cy} radius={24}
+            fill={node.color && node.color !== '#1e293b' ? node.color : START_FILL}
+            stroke={isSelected ? SELECTED_GLOW : isHovered ? 'rgba(116,69,119,0.7)' : 'transparent'}
+            strokeWidth={isSelected ? 3 : 2}
+            shadowColor={SELECTED_GLOW}
+            shadowBlur={isSelected ? 14 : isHovered ? 8 : 0}
+            shadowOpacity={0.55}
+          />
+          {/* Punto interno para distinción visual */}
+          <Circle x={cx} y={cy} radius={10} fill="rgba(240,233,182,0.35)" />
+        </>
+      )}
+
+      {/* ── FIN: Bullseye ── */}
+      {node.type === 'end' && (
+        <>
+          {/* Halo */}
+          <Circle
+            x={cx} y={cy} radius={30}
+            fill="rgba(116,69,119,0.10)"
+          />
+          {/* Anillo exterior */}
+          <Ring
+            x={cx} y={cy}
+            innerRadius={19}
+            outerRadius={26}
+            fill={END_RING}
+            stroke={isSelected ? SELECTED_GLOW : isHovered ? 'rgba(116,69,119,0.6)' : 'rgba(116,69,119,0.3)'}
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            shadowColor={SELECTED_GLOW}
+            shadowBlur={isSelected ? 14 : isHovered ? 6 : 0}
+            shadowOpacity={0.5}
+          />
+          {/* Círculo central */}
+          <Circle
+            x={cx} y={cy} radius={12}
+            fill={node.color && node.color !== '#1e293b' ? node.color : END_FILL}
           />
         </>
       )}

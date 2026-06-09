@@ -60,16 +60,14 @@ export const DocxEditorModal: React.FC<DocxEditorModalProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      // Fetch the DOCX file as an ArrayBuffer via Proxy to bypass CORS
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
       const proxyUrl = `${apiBase}/documents/proxy?url=${encodeURIComponent(docUrl)}&token=${localStorage.getItem('token')}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error('Error al descargar el archivo original.');
       const arrayBuffer = await response.arrayBuffer();
 
-      // Convert DOCX to HTML using mammoth
       const result = await mammoth.convertToHtml({ arrayBuffer });
-      setContentHtml(result.value); // The generated HTML
+      setContentHtml(result.value);
     } catch (err: any) {
       console.error(err);
       setError('No se pudo cargar o parsear el documento DOCX.');
@@ -92,7 +90,6 @@ export const DocxEditorModal: React.FC<DocxEditorModalProps> = ({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      // Pasar el contenido HTML directamente al padre
       await onSave(contentHtml);
     } catch (err: any) {
       console.error(err);
@@ -103,35 +100,36 @@ export const DocxEditorModal: React.FC<DocxEditorModalProps> = ({
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 2100, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155' }}>
-        <span style={{ color: 'white', fontWeight: 'bold' }}>Documento: {docName}</span>
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'var(--bg-glass)', backdropFilter: 'blur(8px)', zIndex: 2100, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 24px', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)' }}>
+        <span style={{ color: 'var(--clr-yellow)', fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: '18px' }}>Documento: {docName}</span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button 
             onClick={handleSave} 
             disabled={isLoading || isSaving}
-            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '4px', cursor: (isLoading || isSaving) ? 'not-allowed' : 'pointer' }}
+            className="saas-button"
+            style={{ width: 'auto', padding: '8px 16px', opacity: (isLoading || isSaving) ? 0.6 : 1 }}
           >
             {isSaving ? 'Guardando...' : 'Guardar Nueva Versión'}
           </button>
-          <button onClick={onClose} disabled={isSaving} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '4px', cursor: 'pointer' }}>
+          <button onClick={onClose} disabled={isSaving} className="saas-button secondary" style={{ width: 'auto', padding: '8px 16px' }}>
             Cancelar
           </button>
         </div>
       </div>
       
-      <div style={{ flex: 1, padding: '20px', background: '#e2e8f0', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '32px', background: 'var(--bg-base)', overflowY: 'auto' }}>
         {isLoading ? (
-          <p style={{ textAlign: 'center', color: '#475569', marginTop: '40px' }}>Cargando y parseando documento...</p>
+          <p style={{ textAlign: 'center', color: 'var(--txt-muted)', marginTop: '40px', fontFamily: 'var(--font-mono)' }}>Cargando y parseando documento...</p>
         ) : error ? (
-          <p style={{ textAlign: 'center', color: '#ef4444', marginTop: '40px' }}>{error}</p>
+          <p style={{ textAlign: 'center', color: 'rgb(220,120,120)', marginTop: '40px', background: 'rgba(220,120,120,0.1)', padding: '16px', borderRadius: '8px', maxWidth: '400px', margin: '40px auto' }}>{error}</p>
         ) : (
-          <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', minHeight: '800px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', background: '#f8f9fa', minHeight: '800px', padding: '40px', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)', border: '1px solid #e2e8f0' }}>
             <ReactQuill 
               theme="snow" 
               value={contentHtml} 
               onChange={handleChange} 
-              style={{ height: '700px', color: 'black' }}
+              style={{ height: '700px', color: '#1e293b' }}
               modules={{
                 toolbar: [
                   [{ 'header': [1, 2, 3, false] }],
@@ -141,6 +139,11 @@ export const DocxEditorModal: React.FC<DocxEditorModalProps> = ({
                 ]
               }}
             />
+            <style>{`
+              .ql-toolbar.ql-snow { border: 1px solid #cbd5e1; border-radius: 4px 4px 0 0; background: white; }
+              .ql-container.ql-snow { border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 4px 4px; background: white; }
+              .ql-editor { font-family: 'Times New Roman', serif; font-size: 16px; line-height: 1.5; }
+            `}</style>
           </div>
         )}
       </div>

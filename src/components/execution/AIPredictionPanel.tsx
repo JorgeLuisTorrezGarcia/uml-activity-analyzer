@@ -34,55 +34,56 @@ export const AIPredictionModal: React.FC<AIPredictionModalProps> = ({ onClose })
 
   const getRiskColor = (level: string) => {
     switch (level) {
-      case 'ALTO': return '#ef4444';
-      case 'MEDIO': return '#f59e0b';
-      case 'BAJO': return '#10b981';
-      default: return '#94a3b8';
+      case 'ALTO': return 'rgb(220,120,120)';
+      case 'MEDIO': return 'var(--clr-yellow)';
+      case 'BAJO': return 'var(--clr-sage)';
+      default: return 'var(--txt-muted)';
     }
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(3px)' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(8px)' }}>
       <div style={{
-        width: '500px',
-        maxHeight: '80vh',
-        background: '#1e293b',
-        border: '1px solid #334155',
-        borderRadius: '12px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        color: '#f8fafc',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        width: '560px',
+        maxHeight: '85vh',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border-default)',
+        borderRadius: '16px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+        color: 'var(--txt-primary)',
+        fontFamily: 'var(--font-body)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
         {/* Header */}
-        <div style={{ background: '#334155', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🔮 Predicción Predictiva IA
+        <div style={{ background: 'var(--bg-surface)', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--clr-yellow)', fontFamily: 'var(--font-display)' }}>
+            <span style={{ fontSize: '20px' }}>🔮</span> Predicción IA
           </h3>
           <button 
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '22px', lineHeight: 1 }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--txt-muted)', cursor: 'pointer', fontSize: '24px', lineHeight: 1 }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--clr-yellow)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--txt-muted)')}
           >
             &times;
           </button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '24px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', flex: 1 }}>
           
-          {/* Botón para generar la predicción manualmente */}
+          {/* Botón inicial */}
           {!prediction && !isLoading && !error && (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <p style={{ color: '#94a3b8', marginBottom: '16px', fontSize: '14px' }}>
-                Presiona el botón para que la IA analice el diagrama actual y genere una predicción de tiempos y riesgos.
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <p style={{ color: 'var(--txt-secondary)', marginBottom: '24px', fontSize: '15px' }}>
+                La Inteligencia Artificial analizará la estructura de tu proceso para predecir tiempos de ejecución, identificar posibles cuellos de botella y evaluar riesgos.
               </p>
               <button 
                 onClick={fetchPrediction}
-                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px', transition: 'background 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#2563eb')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#3b82f6')}
+                className="saas-button"
+                style={{ width: 'auto', padding: '14px 28px', fontSize: '15px' }}
               >
                 🚀 Generar Predicción
               </button>
@@ -90,20 +91,17 @@ export const AIPredictionModal: React.FC<AIPredictionModalProps> = ({ onClose })
           )}
 
           {isLoading && (
-            <div style={{ padding: '30px 0', textAlign: 'center', color: '#94a3b8' }}>
-              <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '3px solid transparent', borderTopColor: '#60a5fa', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '12px' }}></div>
-              <div style={{ fontSize: '14px' }}>Gemini estimando tiempos y riesgos...</div>
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--clr-yellow)' }}>
+              <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '4px solid transparent', borderTopColor: 'var(--clr-purple)', borderRightColor: 'var(--clr-teal)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+              <div style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>Analizando proceso...</div>
               <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
             </div>
           )}
 
           {error && (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <div style={{ color: '#ef4444', marginBottom: '12px' }}>{error}</div>
-              <button 
-                onClick={fetchPrediction}
-                style={{ background: '#334155', color: '#e2e8f0', border: '1px solid #475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
-              >
+            <div style={{ textAlign: 'center', padding: '32px 0', background: 'rgba(220,120,120,0.1)', borderRadius: '10px', border: '1px solid rgba(220,120,120,0.3)' }}>
+              <div style={{ color: 'rgb(220,120,120)', marginBottom: '16px', fontWeight: 600 }}>{error}</div>
+              <button onClick={fetchPrediction} className="saas-button secondary" style={{ width: 'auto' }}>
                 Reintentar
               </button>
             </div>
@@ -111,33 +109,33 @@ export const AIPredictionModal: React.FC<AIPredictionModalProps> = ({ onClose })
 
           {prediction && (
             <>
-              {/* KPI Predictivo */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1, background: '#0f172a', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid #334155' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase' }}>Tiempo Total Est.</div>
-                  <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#60a5fa' }}>{prediction.estimatedMinutes} min</div>
+              {/* KPIs Predictivos */}
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ flex: 1, background: 'var(--bg-surface)', padding: '20px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ color: 'var(--txt-secondary)', fontSize: '11px', marginBottom: '8px', fontFamily: 'var(--font-mono)', letterSpacing: '1px' }}>TIEMPO TOTAL EST.</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--clr-teal)', fontFamily: 'var(--font-display)' }}>{prediction.estimatedMinutes} min</div>
                 </div>
-                <div style={{ flex: 1, background: '#0f172a', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid #334155' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase' }}>Nivel de Riesgo</div>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: getRiskColor(prediction.riskLevel) }}>{prediction.riskLevel}</div>
+                <div style={{ flex: 1, background: 'var(--bg-surface)', padding: '20px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ color: 'var(--txt-secondary)', fontSize: '11px', marginBottom: '8px', fontFamily: 'var(--font-mono)', letterSpacing: '1px' }}>NIVEL DE RIESGO</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: getRiskColor(prediction.riskLevel), fontFamily: 'var(--font-display)' }}>{prediction.riskLevel}</div>
                 </div>
               </div>
 
               {/* Explicación de Riesgo */}
-              <div style={{ background: '#0f172a', padding: '14px', borderRadius: '8px', border: '1px solid #334155' }}>
-                <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Explicación de Riesgo:</div>
-                <p style={{ margin: 0, color: '#cbd5e1', lineHeight: '1.5' }}>{prediction.riskExplanation}</p>
+              <div style={{ background: 'var(--bg-surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ color: 'var(--clr-purple-light)', fontWeight: 700, marginBottom: '10px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>EXPLICACIÓN DEL RIESGO</div>
+                <p style={{ margin: 0, color: 'var(--txt-primary)', lineHeight: '1.6' }}>{prediction.riskExplanation}</p>
               </div>
 
               {/* Puntos Críticos */}
               {prediction.bottlenecks && prediction.bottlenecks.length > 0 && (
                 <div>
-                  <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: '8px', fontSize: '12px', textTransform: 'uppercase' }}>Actividades con Mayor Retraso:</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ color: 'var(--clr-purple-light)', fontWeight: 700, marginBottom: '12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>POSIBLES CUELLOS DE BOTELLA</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {prediction.bottlenecks.map((b: any, i: number) => (
-                      <div key={i} style={{ background: '#334155', padding: '10px 12px', borderRadius: '6px', borderLeft: '3px solid #f59e0b' }}>
-                        <div style={{ fontWeight: 'bold', color: '#f59e0b', fontSize: '13px' }}>⚠️ {b.nodeLabel}</div>
-                        <div style={{ color: '#cbd5e1', fontSize: '12px', marginTop: '4px' }}>{b.reason}</div>
+                      <div key={i} style={{ background: 'var(--bg-overlay)', padding: '14px 16px', borderRadius: '8px', borderLeft: '4px solid var(--clr-yellow)', borderTop: '1px solid var(--border-subtle)', borderRight: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <div style={{ fontWeight: 'bold', color: 'var(--clr-yellow)', fontSize: '14px', marginBottom: '6px' }}>⚠️ {b.nodeLabel}</div>
+                        <div style={{ color: 'var(--txt-secondary)', fontSize: '13px', lineHeight: '1.5' }}>{b.reason}</div>
                       </div>
                     ))}
                   </div>
@@ -147,8 +145,8 @@ export const AIPredictionModal: React.FC<AIPredictionModalProps> = ({ onClose })
               {/* Recomendaciones */}
               {prediction.recommendations && prediction.recommendations.length > 0 && (
                 <div>
-                  <div style={{ color: '#94a3b8', fontWeight: 600, marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}>Recomendaciones IA:</div>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ color: 'var(--clr-purple-light)', fontWeight: 700, marginBottom: '12px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>RECOMENDACIONES</div>
+                  <ul style={{ margin: 0, paddingLeft: '24px', color: 'var(--txt-primary)', display: 'flex', flexDirection: 'column', gap: '8px', lineHeight: '1.6' }}>
                     {prediction.recommendations.map((r: string, i: number) => (
                       <li key={i}>{r}</li>
                     ))}
@@ -157,13 +155,9 @@ export const AIPredictionModal: React.FC<AIPredictionModalProps> = ({ onClose })
               )}
 
               {/* Botón recargar */}
-              <div style={{ textAlign: 'center', paddingTop: '8px' }}>
-                <button 
-                  onClick={fetchPrediction}
-                  disabled={isLoading}
-                  style={{ background: '#334155', color: '#e2e8f0', border: '1px solid #475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
-                >
-                  🔄 Regenerar Predicción
+              <div style={{ textAlign: 'center', paddingTop: '16px' }}>
+                <button onClick={fetchPrediction} disabled={isLoading} className="saas-button secondary" style={{ width: 'auto', fontSize: '13px' }}>
+                  🔄 Regenerar Análisis
                 </button>
               </div>
             </>

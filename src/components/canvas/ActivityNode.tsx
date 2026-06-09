@@ -3,6 +3,11 @@ import { Rect, Text, Group } from 'react-konva';
 import { DiagramNode, PortPosition } from '../../types/diagram';
 import { NodePorts } from './NodePorts';
 
+/* ══════════════════════════════════════════════════
+   ActivityNode — Fondo blanco canvas
+   Paleta: purple · teal · sobre blanco
+   ══════════════════════════════════════════════════ */
+
 interface NodeProps {
   node: DiagramNode;
   isSelected: boolean;
@@ -18,6 +23,13 @@ interface NodeProps {
   onDragEnd: (e: any) => void;
 }
 
+/* Colores para fondo blanco */
+const ACTIVITY_FILL    = 'rgb(132, 197, 177)';   // teal pastel
+const ACTIVITY_STROKE  = 'rgb(90, 155, 135)';    // teal oscuro
+const SELECTED_STROKE  = 'rgb(116, 69, 119)';    // purple
+const ACTIVE_STROKE    = 'rgb(172, 207, 163)';   // sage
+const TEXT_COLOR       = 'rgb(26, 15, 30)';      // dark para contraste
+
 export const ActivityNode: React.FC<NodeProps> = ({
   node,
   isSelected,
@@ -32,6 +44,20 @@ export const ActivityNode: React.FC<NodeProps> = ({
   onDragEnd,
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
+
+  /* Color de relleno: custom > default teal */
+  const fillColor = node.color && node.color !== '#1e293b'
+    ? node.color
+    : ACTIVITY_FILL;
+
+  const strokeColor = isExecutionActive
+    ? ACTIVE_STROKE
+    : isSelected
+    ? SELECTED_STROKE
+    : isHovered
+    ? 'rgb(100, 165, 145)'
+    : ACTIVITY_STROKE;
+
   return (
     <Group
       id={node.id}
@@ -47,30 +73,53 @@ export const ActivityNode: React.FC<NodeProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Sombra decorativa */}
       <Rect
         width={node.width}
         height={node.height}
-        fill={node.color || '#1e293b'}
-        cornerRadius={node.type === 'activity' ? 25 : 0}
-        stroke={isExecutionActive ? '#22c55e' : (isSelected ? '#3b82f6' : 'rgba(255, 255, 255, 0.4)')}
-        strokeWidth={isExecutionActive ? 4 : (isSelected ? 2 : 1)}
-        shadowColor={isExecutionActive ? '#22c55e' : 'transparent'}
-        shadowBlur={isExecutionActive ? 15 : 0}
-        shadowOpacity={0.8}
+        cornerRadius={node.type === 'activity' ? 26 : 0}
+        fill="rgba(116,69,119,0.12)"
+        x={3} y={4}
       />
+
+      {/* Rectángulo principal */}
+      <Rect
+        width={node.width}
+        height={node.height}
+        fill={fillColor}
+        cornerRadius={node.type === 'activity' ? 26 : 0}
+        stroke={strokeColor}
+        strokeWidth={isSelected ? 2.5 : isExecutionActive ? 3 : 1.5}
+        shadowColor={isExecutionActive ? ACTIVE_STROKE : isSelected ? SELECTED_STROKE : 'transparent'}
+        shadowBlur={isExecutionActive ? 14 : isSelected ? 8 : 0}
+        shadowOpacity={0.5}
+      />
+
+      {/* Texto */}
       <Text
         text={node.label}
         width={node.width}
         height={node.height}
         align="center"
         verticalAlign="middle"
-        fill="white"
-        fontSize={14}
+        fill={TEXT_COLOR}
+        fontSize={13}
+        fontStyle="600"
+        fontFamily="'DM Sans', system-ui, sans-serif"
         padding={10}
         fillAfterStrokeEnabled
       />
 
-      {/* Puertos de Conexión (visibles al hacer hover o conectar) */}
+      {/* Indicador de ejecución activa */}
+      {isExecutionActive && (
+        <Rect
+          width={8} height={8}
+          x={node.width - 14} y={6}
+          cornerRadius={4}
+          fill="rgb(172, 207, 163)"
+        />
+      )}
+
       <NodePorts
         node={node}
         visible={isHovered}

@@ -70,16 +70,13 @@ export const DynamicFormPanel: React.FC = () => {
   const schema = activeNode.executionConfig?.formSchema || [];
   const hasSchema = schema.length > 0;
 
-  // Verificación de permisos de carril (Lane)
   const lane = state.lanes.find(l => l.id === activeNode.laneId);
   const hasPermission = !lane || !lane.title || (user && user.name.toLowerCase() === lane.title.toLowerCase());
   
   const handleAdvance = async (forcedPathToId?: string) => {
     let parsedPayload = {};
     
-    // Si el nodo tiene esquema creado por el form builder, usamos formData
     if (hasSchema) {
-      // Validación básica
       for (const field of schema) {
         if (field.required) {
           if (field.type === 'file' && !filesData[field.name]) {
@@ -94,7 +91,6 @@ export const DynamicFormPanel: React.FC = () => {
       }
       parsedPayload = { ...formData };
     } else {
-      // Modo Legacy
       if (jsonText.trim()) {
         try {
           parsedPayload = JSON.parse(jsonText);
@@ -105,22 +101,17 @@ export const DynamicFormPanel: React.FC = () => {
       }
     }
 
-    // Opcional: Persistir al Backend antes de avanzar (BPM Tracking)
     setIsSubmitting(true);
     let uploadedUrls: string[] = [];
     try {
       const tokenLocal = localStorage.getItem('token');
       if (tokenLocal) {
-        // Envolver en FormData HTML web API
         const formPayload = new FormData();
-        // El diagrama global no guarda el Token Instance en backend todavia, pero enviamos los datos si hay API.
-        // Fallback: asumo "instance_test" por ahora
         formPayload.append('instanceId', activeToken.id);
         formPayload.append('nodeId', activeNode.id);
         formPayload.append('laneId', activeNode.laneId || '');
         formPayload.append('formData', JSON.stringify(parsedPayload));
 
-        // Enviamos el token activo para que el backend actualice activeTokens
         const nextNodeId = state.arrows.find(a => a.fromId === activeNode.id)?.toId || 'end';
         formPayload.append('activeTokens', JSON.stringify([{ 
           tokenId: activeToken.id, 
@@ -128,7 +119,6 @@ export const DynamicFormPanel: React.FC = () => {
           laneId: activeNode.laneId || null
         }]));
 
-        // Subir los filesData
         Object.values(filesData).forEach(file => {
           formPayload.append('files', file);
         });
@@ -149,7 +139,7 @@ export const DynamicFormPanel: React.FC = () => {
       if (e.response && e.response.status === 400) {
         setErrorObj(e.response.data.suggestion || e.response.data.error);
         setIsSubmitting(false);
-        return; // Detener el avance si la persistencia falló por ID inválido
+        return;
       }
       console.warn("Ejecución en frontend sin persistencia online (Offline Mode)");
     }
@@ -162,7 +152,6 @@ export const DynamicFormPanel: React.FC = () => {
       ...(uploadedUrls.length > 0 ? { artifacts: uploadedUrls } : {})
     };
     
-    // Algoritmo de Avance
     const outgoingArrows = state.arrows.filter(a => a.fromId === activeNode.id);
     
     if (forcedPathToId) { 
@@ -174,7 +163,6 @@ export const DynamicFormPanel: React.FC = () => {
     } else {
       endExecution(activeToken.id);
       
-      // Marcar ejecución como finalizada en el backend
       try {
         const tokenLocal = localStorage.getItem('token');
         const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -215,35 +203,34 @@ export const DynamicFormPanel: React.FC = () => {
 
     return (
       <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Datos de Entrada recibidos:</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 2fr', gap: '8px', background: '#1e293b', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
+        <h3 style={{ fontSize: '12px', color: 'var(--clr-yellow)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'var(--font-mono)' }}>Datos de Entrada recibidos:</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 2fr', gap: '10px', background: 'var(--bg-surface)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-default)' }}>
           {entries.map(([key, value]) => {
             let displayValue: React.ReactNode = String(value);
             if (typeof value === 'string' && value.startsWith('http')) {
-              displayValue = <button onClick={() => setPreviewDoc({ url: value, name: key })} style={{ color: '#3b82f6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Ver Archivo 📎</button>;
+              displayValue = <button onClick={() => setPreviewDoc({ url: value, name: key })} style={{ color: 'var(--clr-teal)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Ver Archivo 📎</button>;
             }
             return (
               <React.Fragment key={key}>
-                <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 500, alignSelf: 'center', wordBreak: 'break-word' }}>{key}</div>
-                <div style={{ fontSize: '13px', color: '#f8fafc', wordBreak: 'break-word', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>{displayValue}</div>
+                <div style={{ fontSize: '13px', color: 'var(--txt-secondary)', fontWeight: 600, alignSelf: 'center', wordBreak: 'break-word', fontFamily: 'var(--font-mono)' }}>{key}</div>
+                <div style={{ fontSize: '14px', color: 'var(--txt-primary)', wordBreak: 'break-word', background: 'var(--bg-elevated)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>{displayValue}</div>
               </React.Fragment>
             );
           })}
           
           {payload.artifacts && payload.artifacts.length > 0 && (
             <React.Fragment>
-              <div style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 500, alignSelf: 'center' }}>Archivos Adjuntos</div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#0f172a', padding: '6px 10px', borderRadius: '4px' }}>
+              <div style={{ fontSize: '13px', color: 'var(--txt-secondary)', fontWeight: 600, alignSelf: 'center', fontFamily: 'var(--font-mono)' }}>Archivos Adjuntos</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'var(--bg-elevated)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
                 {payload.artifacts.map((url: string, i: number) => {
                   const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
                   const fullUrl = url.startsWith('http') ? url : `${rootUrl}${url}`;
-                  // Extraer nombre del path de S3
                   const rawName = decodeURIComponent(fullUrl.split('?')[0].split('/').pop() || `Adjunto ${i+1}`);
                   return (
                     <button 
                       key={i} 
                       onClick={() => setPreviewDoc({ url: fullUrl, name: rawName })}
-                      style={{ background: 'transparent', border: 'none', color: '#ef4444', textDecoration: 'underline', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                      style={{ background: 'var(--clr-purple-mist)', border: '1px solid var(--clr-purple)', color: 'var(--clr-yellow)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}
                     >
                       {rawName} 📎
                     </button>
@@ -262,33 +249,34 @@ export const DynamicFormPanel: React.FC = () => {
       position: 'absolute',
       top: 55,
       right: 0,
-      width: '360px',
+      width: '400px',
       height: '95%',
-      backgroundColor: '#0f172a',
-      borderLeft: '1px solid #334155',
-      boxShadow: '-4px 0 15px rgba(0,0,0,0.5)',
+      backgroundColor: 'var(--bg-elevated)',
+      borderLeft: '1px solid var(--border-default)',
+      boxShadow: '-8px 0 24px rgba(0,0,0,0.4)',
       display: 'flex',
       flexDirection: 'column',
       zIndex: 150,
-      color: '#f8fafc',
+      color: 'var(--txt-primary)',
       padding: '24px',
-      overflowY: 'auto'
+      overflowY: 'auto',
+      fontFamily: 'var(--font-body)'
     }}>
-      <h2 style={{ fontSize: '18px', margin: '0 0 16px 0' }}>
+      <h2 style={{ fontSize: '20px', margin: '0 0 20px 0', fontFamily: 'var(--font-display)', color: 'var(--clr-yellow)', fontWeight: 700 }}>
         ⚙️ {activeNode.label || nodeType}
       </h2>
 
       {/* TABS */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #334155', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-default)', marginBottom: '24px' }}>
         <button 
           onClick={() => setActiveTab('actual')}
-          style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'actual' ? '2px solid #3b82f6' : '2px solid transparent', color: activeTab === 'actual' ? '#3b82f6' : '#94a3b8', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+          style={{ flex: 1, padding: '12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'actual' ? '3px solid var(--clr-purple)' : '3px solid transparent', color: activeTab === 'actual' ? 'var(--clr-purple)' : 'var(--txt-muted)', cursor: 'pointer', fontSize: '14px', fontWeight: 600, transition: 'all 0.2s', fontFamily: 'var(--font-body)' }}
         >
           Tarea Actual
         </button>
         <button 
           onClick={() => setActiveTab('history')}
-          style={{ flex: 1, padding: '10px', background: 'transparent', border: 'none', borderBottom: activeTab === 'history' ? '2px solid #10b981' : '2px solid transparent', color: activeTab === 'history' ? '#10b981' : '#94a3b8', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}
+          style={{ flex: 1, padding: '12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'history' ? '3px solid var(--clr-teal)' : '3px solid transparent', color: activeTab === 'history' ? 'var(--clr-teal)' : 'var(--txt-muted)', cursor: 'pointer', fontSize: '14px', fontWeight: 600, transition: 'all 0.2s', fontFamily: 'var(--font-body)' }}
         >
           Historial Pasado
         </button>
@@ -296,30 +284,28 @@ export const DynamicFormPanel: React.FC = () => {
 
       {activeTab === 'actual' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-        {/* TABLA DE DATOS N8N STYLE EN LUGAR DE PRE JSON */}
         {renderIncomingData(activeToken.payload)}
 
         {!hasPermission ? (
-          <div style={{ background: '#334155', padding: '20px', borderRadius: '8px', textAlign: 'center', marginTop: '20px' }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px' }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '24px', borderRadius: '12px', textAlign: 'center', marginTop: '20px', border: '1px solid var(--border-default)' }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--clr-yellow)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px' }}>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc' }}>Acceso Restringido</h3>
-            <p style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '8px' }}>
-              Esperando a que el responsable <strong>{lane?.title}</strong> complete esta tarea.
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--txt-primary)', fontFamily: 'var(--font-display)' }}>Acceso Restringido</h3>
+            <p style={{ fontSize: '14px', color: 'var(--txt-secondary)', marginTop: '10px', lineHeight: '1.5' }}>
+              Esperando a que el responsable <strong style={{ color: 'var(--clr-yellow)' }}>{lane?.title}</strong> complete esta tarea.
             </p>
           </div>
         ) : !isDecision ? (
           <>
             {hasSchema ? (
-              // RENDER DEL FORMULARIO DINÁMICO
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '13px', margin: 0, borderBottom: '1px solid #334155', paddingBottom: '8px' }}>Por favor completa el formulario:</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                <p style={{ fontSize: '14px', margin: 0, borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', color: 'var(--txt-secondary)', fontWeight: 600 }}>Por favor completa el formulario:</p>
                 {schema.map(field => (
-                  <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '13px', color: '#cbd5e1' }}>
-                      {field.label} {field.required && <span style={{ color: '#ef4444' }}>*</span>}
+                  <div key={field.id} className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="label">
+                      {field.label} {field.required && <span style={{ color: 'rgb(220,120,120)' }}>*</span>}
                     </label>
                     
                     {field.type === 'text' && (
@@ -339,23 +325,24 @@ export const DynamicFormPanel: React.FC = () => {
                     )}
 
                     {field.type === 'select' && (
-                      <select className="saas-input" value={formData[field.name] || ''} onChange={e => handleFieldChange(field.name, e.target.value)} style={{ appearance: 'auto' }}>
+                      <select className="saas-input" value={formData[field.name] || ''} onChange={e => handleFieldChange(field.name, e.target.value)} style={{ appearance: 'auto', cursor: 'pointer' }}>
                         {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                       </select>
                     )}
 
                     {field.type === 'file' && (
-                      <input 
-                        className="saas-input" 
-                        type="file" 
-                        onChange={e => handleFileChange(field.name, e.target.files ? e.target.files[0] : null)} 
-                        style={{ padding: '8px' }}
-                      />
+                      <div style={{ background: 'var(--bg-surface)', padding: '8px', borderRadius: '8px', border: '1px dashed var(--border-default)' }}>
+                        <input 
+                          type="file" 
+                          onChange={e => handleFileChange(field.name, e.target.files ? e.target.files[0] : null)} 
+                          style={{ color: 'var(--txt-secondary)', fontSize: '13px' }}
+                        />
+                      </div>
                     )}
 
                     {field.type === 'boolean' && (
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={!!formData[field.name]} onChange={e => handleFieldChange(field.name, e.target.checked)} />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', cursor: 'pointer', color: 'var(--txt-primary)', fontWeight: 600 }}>
+                        <input type="checkbox" checked={!!formData[field.name]} onChange={e => handleFieldChange(field.name, e.target.checked)} style={{ accentColor: 'var(--clr-purple)' }} />
                         Sí / Confirmar
                       </label>
                     )}
@@ -363,12 +350,11 @@ export const DynamicFormPanel: React.FC = () => {
                 ))}
               </div>
             ) : (
-              // FALLBACK A INYECCION RAW JSON
               <>
-                <p style={{ fontSize: '13px', margin: 0 }}>Inyección JSON (Sin formulario configurado):</p>
+                <p style={{ fontSize: '14px', margin: 0, color: 'var(--txt-secondary)', fontWeight: 600 }}>Inyección JSON (Sin formulario):</p>
                 <textarea 
                   className="saas-input"
-                  style={{ flex: 1, minHeight: '150px', fontFamily: 'monospace', fontSize: '12px', resize: 'vertical' }}
+                  style={{ flex: 1, minHeight: '180px', fontFamily: 'var(--font-mono)', fontSize: '13px', resize: 'vertical' }}
                   value={jsonText}
                   onChange={(e) => {
                     setJsonText(e.target.value);
@@ -379,16 +365,16 @@ export const DynamicFormPanel: React.FC = () => {
               </>
             )}
 
-            {errorObj && <p style={{ color: '#ef4444', fontSize: '11px', margin: 0, padding: '8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px' }}>Errores: {errorObj}</p>}
+            {errorObj && <p style={{ color: 'rgb(220,120,120)', fontSize: '13px', margin: 0, padding: '12px', background: 'rgba(220,120,120,0.1)', borderRadius: '6px', border: '1px solid rgba(220,120,120,0.3)', fontWeight: 600 }}>Error: {errorObj}</p>}
             
-            <button className="saas-button" onClick={() => handleAdvance()} disabled={isSubmitting} style={{ marginTop: 'auto', background: '#3b82f6', opacity: isSubmitting ? 0.7 : 1 }}>
+            <button className="saas-button" onClick={() => handleAdvance()} disabled={isSubmitting} style={{ marginTop: 'auto', opacity: isSubmitting ? 0.7 : 1 }}>
               {isSubmitting ? 'Procesando...' : 'Completar y Avanzar ➔'}
             </button>
           </>
         ) : (
           <>
-            <p style={{ fontSize: '13px', margin: 0 }}>Decisión Manual Requerida:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ fontSize: '14px', margin: '0 0 16px 0', color: 'var(--txt-secondary)', fontWeight: 600 }}>Decisión Manual Requerida:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {decisionArrows.length > 0 ? decisionArrows.map((arrow, idx) => {
                 const labelRaw = (arrow.label || '').toLowerCase();
                 const isExplicitTrue = labelRaw.includes('si') || labelRaw.includes('sí') || labelRaw.includes('yes') || labelRaw.includes('true');
@@ -407,13 +393,19 @@ export const DynamicFormPanel: React.FC = () => {
                     key={arrow.id}
                     className="saas-button" 
                     onClick={() => handleAdvance(arrow.toId)} 
-                    style={{ background: isTruePath ? '#10b981' : '#ef4444' }}
+                    style={{ 
+                      background: isTruePath ? 'var(--clr-sage-mist)' : 'rgba(220,120,120,0.1)',
+                      color: isTruePath ? 'var(--clr-sage-deep)' : 'rgb(220,120,120)',
+                      borderColor: isTruePath ? 'rgba(172, 207, 163, 0.4)' : 'rgba(220,120,120,0.4)',
+                      padding: '14px',
+                      fontSize: '15px'
+                    }}
                   >
-                    Ruta: {visualText}
+                    {isTruePath ? '✓' : '✕'} Ruta: {visualText}
                   </button>
                 )
               }) : (
-                 <p style={{ fontSize: '12px', color: 'gray' }}>No hay salidas conectadas.</p>
+                 <p style={{ fontSize: '13px', color: 'var(--txt-muted)', fontStyle: 'italic' }}>No hay salidas conectadas.</p>
               )}
             </div>
           </>
@@ -423,40 +415,40 @@ export const DynamicFormPanel: React.FC = () => {
 
       {/* RENDER TAB HISTORIAL */}
       {activeTab === 'history' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+          <p style={{ fontSize: '14px', color: 'var(--txt-secondary)', margin: 0, lineHeight: '1.5' }}>
             Visualizando las veces que este bloque fue completado por otros usuarios en el pasado.
           </p>
 
-          {isLoadingHistory && <p style={{ fontSize: '12px', color: '#3b82f6' }}>Cargando registros...</p>}
-          {!isLoadingHistory && nodeHistory.length === 0 && <p style={{ fontSize: '12px', color: '#64748b' }}>Aún no hay registros paralelos para este nodo.</p>}
+          {isLoadingHistory && <p style={{ fontSize: '13px', color: 'var(--clr-teal)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>Cargando registros...</p>}
+          {!isLoadingHistory && nodeHistory.length === 0 && <p style={{ fontSize: '13px', color: 'var(--txt-muted)', fontStyle: 'italic' }}>Aún no hay registros paralelos para este nodo.</p>}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {nodeHistory.map(entry => (
-              <div key={entry.id} style={{ background: '#1e293b', padding: '16px', borderRadius: '8px', border: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#e2e8f0' }}>{entry.executedBy?.name || 'Usuario'}</span>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>{new Date(entry.executedAt).toLocaleDateString()}</span>
+              <div key={entry.id} style={{ background: 'var(--bg-surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--clr-purple-light)', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 {entry.executedBy?.name || 'Usuario'}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--txt-muted)', fontFamily: 'var(--font-mono)' }}>{new Date(entry.executedAt).toLocaleDateString()}</span>
                 </div>
                 
                 {entry.formData && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(80px, 1fr) 2fr', gap: '6px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 2fr', gap: '10px' }}>
                     {Object.entries(entry.formData).map(([k, v]) => (
                       <React.Fragment key={k}>
-                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{k}</div>
-                        <div style={{ fontSize: '12px', color: '#f8fafc', background: '#0f172a', padding: '4px 8px', borderRadius: '4px' }}>{String(v)}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--txt-secondary)', fontWeight: 600, alignSelf: 'center', fontFamily: 'var(--font-mono)' }}>{k}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--txt-primary)', background: 'var(--bg-elevated)', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>{String(v)}</div>
                       </React.Fragment>
                     ))}
                   </div>
                 )}
 
                 {entry.artifactsUrls && entry.artifactsUrls.length > 0 && (
-                  <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                      {entry.artifactsUrls.map((url: string, i: number) => {
                         const rootUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
                         const fullUrl = url.startsWith('http') ? url : `${rootUrl}${url}`;
                         return (
-                           <button key={i} onClick={() => setPreviewDoc({ url: fullUrl, name: `Adjunto ${i+1}` })} style={{ fontSize: '11px', background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>Adjunto {i+1}</button>
+                           <button key={i} onClick={() => setPreviewDoc({ url: fullUrl, name: `Adjunto ${i+1}` })} style={{ fontSize: '12px', background: 'var(--clr-purple-mist)', color: 'var(--clr-yellow)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--clr-purple)', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}>📎 Adjunto {i+1}</button>
                         );
                      })}
                   </div>
@@ -469,15 +461,15 @@ export const DynamicFormPanel: React.FC = () => {
 
       {/* Visor Modal de Adjuntos */}
       {previewDoc && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '16px', background: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155' }}>
-            <span style={{ color: 'white', fontWeight: 'bold' }}>Visor: {previewDoc.name}</span>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>Si el visor no carga, usa el botón "Descargar".</span>
-              <a href={previewDoc.url} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'var(--bg-glass)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '16px 24px', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)' }}>
+            <span style={{ color: 'var(--clr-yellow)', fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: '18px' }}>Visor: {previewDoc.name}</span>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <span style={{ color: 'var(--txt-muted)', fontSize: '13px' }}>Si el visor no carga, usa "Descargar".</span>
+              <a href={previewDoc.url} target="_blank" rel="noreferrer" style={{ color: 'var(--clr-teal)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
                 Descargar Directo ↗
               </a>
-              <button onClick={() => setPreviewDoc(null)} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '4px', cursor: 'pointer' }}>
+              <button onClick={() => setPreviewDoc(null)} className="saas-button secondary" style={{ width: 'auto', padding: '8px 16px' }}>
                 Cerrar Visor
               </button>
             </div>
@@ -488,7 +480,7 @@ export const DynamicFormPanel: React.FC = () => {
               ? `https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.url)}&embedded=true`
               : `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/documents/proxy?url=${encodeURIComponent(previewDoc.url)}&token=${localStorage.getItem('token')}`
             } 
-            style={{ width: '100%', flex: 1, border: 'none', background: '#e2e8f0' }}
+            style={{ width: '100%', flex: 1, border: 'none', background: 'white' }}
             title="Visor"
           />
         </div>
@@ -496,3 +488,5 @@ export const DynamicFormPanel: React.FC = () => {
     </div>
   );
 };
+
+export default DynamicFormPanel;

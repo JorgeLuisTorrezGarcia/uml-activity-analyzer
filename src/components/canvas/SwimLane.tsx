@@ -3,6 +3,11 @@ import { Rect, Text, Group, Line } from 'react-konva';
 import { SwimLane as SwimLaneType } from '../../types/diagram';
 import { useDiagramStore } from '../../store/diagramStore';
 
+/* ══════════════════════════════════════════════════
+   SwimLane — Calles del diagrama de actividad
+   Sobre fondo blanco — paleta retro-vintage
+   ══════════════════════════════════════════════════ */
+
 interface SwimLaneProps {
   lane: SwimLaneType;
   x: number;
@@ -14,15 +19,20 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   
   const laneHeight = (lane as any).height || height;
+  
+  /* Colores para la calle sobre fondo blanco */
+  const HEADER_FILL = lane.color ? lane.color : 'rgba(240, 233, 182, 0.4)'; // Yellow pastel por defecto
+  const LANE_BORDER = 'rgba(116, 69, 119, 0.3)'; // Purple suave
+  const TEXT_COLOR = 'rgb(116, 69, 119)'; // Purple oscuro para contraste
 
   return (
     <Group x={x} y={0}>
-      {/* Dynamic Background Rect */}
+      {/* Dynamic Background Rect (ahora casi transparente sobre blanco) */}
       <Rect
         width={lane.width}
         height={laneHeight}
-        fill="rgba(30, 41, 59, 0.3)"
-        stroke="rgba(255, 255, 255, 0.05)"
+        fill="rgba(255, 255, 255, 0.5)"
+        stroke={LANE_BORDER}
         strokeWidth={1}
       />
       
@@ -30,8 +40,8 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
       <Rect
         width={lane.width}
         height={40}
-        fill={lane.color + '22'} // Semi-transparent
-        stroke="rgba(255, 255, 255, 0.1)"
+        fill={HEADER_FILL}
+        stroke={LANE_BORDER}
         strokeWidth={1}
       />
       
@@ -43,24 +53,25 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
           height={40}
           align="center"
           verticalAlign="middle"
-          fill="white"
-          fontSize={12}
+          fill={TEXT_COLOR}
+          fontSize={13}
           fontStyle="bold"
+          fontFamily="'DM Sans', system-ui, sans-serif"
           letterSpacing={1.2}
           onDblClick={() => setIsEditing(true)}
         />
       ) : (
         <Group>
-          <Rect width={lane.width} height={40} fill="#1e293b" />
-          {/* Note: Konva doesn't have an <input>, so we usually use a DOM input portal or just simple prompt for name change here for speed */}
+          <Rect width={lane.width} height={40} fill="rgba(240, 233, 182, 0.8)" />
           <Text
             text="EDITANDO..."
             width={lane.width}
             height={40}
             align="center"
             verticalAlign="middle"
-            fill="#3b82f6"
-            fontSize={10}
+            fill="rgb(132, 197, 177)" // Teal
+            fontSize={11}
+            fontFamily="'Space Mono', monospace"
             onClick={() => {
               const newTitle = prompt("Nuevo nombre de la calle:", lane.title);
               if (newTitle) updateLane(lane.id, { title: newTitle });
@@ -93,14 +104,14 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
           }
         }}
       >
-        <Rect width={16} height={16} fill="rgba(239, 68, 68, 0.2)" cornerRadius={4} />
+        <Rect width={16} height={16} fill="rgba(239, 68, 68, 0.15)" cornerRadius={4} />
         <Text text="×" width={16} height={16} align="center" verticalAlign="middle" fill="#ef4444" fontSize={14} fontStyle="bold" />
       </Group>
       
       {/* Right separation line */}
       <Line
         points={[lane.width, 0, lane.width, laneHeight]}
-        stroke="rgba(255, 255, 255, 0.1)"
+        stroke={LANE_BORDER}
         strokeWidth={1}
       />
 
@@ -121,11 +132,8 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
           if (container) container.style.cursor = 'default';
         }}
         onDragMove={(e) => {
-          // El 'e.target.x()' aquí YA ESTÁ RELATIVO AL GRUPO, porque el Rect está dentro del Group.
-          // Por tanto, la nueva anchura de la calle es simplemente e.target.x() + 5
           const newWidth = e.target.x() + 5;
           updateLane(lane.id, { width: Math.max(100, newWidth) });
-          // Mantenemos el handle alineado al borde, que ahora se movió visualmente
           e.target.x(Math.max(100, newWidth) - 5);
         }}
         onDragEnd={(e) => {
@@ -152,7 +160,6 @@ export const SwimLane: React.FC<SwimLaneProps> = ({ lane, x, height }) => {
           if (container) container.style.cursor = 'default';
         }}
         onDragMove={(e) => {
-          // e.target.y() is relative to Group
           const newHeight = e.target.y() + 5;
           updateLane(lane.id, { height: Math.max(200, newHeight) } as any);
           e.target.y(Math.max(200, newHeight) - 5);

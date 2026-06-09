@@ -48,12 +48,26 @@ export const MetricsDashboard: React.FC = () => {
   };
 
   if (isLoading && !metrics) {
-    return <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>Cargando Inteligencia de Negocios...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)' }}>
+        <div style={{
+          width: '44px', height: '44px',
+          border: '3px solid transparent',
+          borderTopColor: 'var(--clr-teal)',
+          borderLeftColor: 'var(--clr-purple)',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <p style={{ marginTop: '18px', fontWeight: 700, fontSize: '15px', color: 'var(--clr-yellow)', fontFamily: "var(--font-body)" }}>
+          Cargando Inteligencia de Negocios...
+        </p>
+        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
   if (!metrics) return null;
 
-  // Filtrar cuellos de botella dinámicamente en el frontend
   const filteredBottlenecks = metrics.bottlenecks.filter((b: any) => {
     const matchesSearch = b.nodeLabel.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLane = selectedLane === '' || b.laneId === selectedLane;
@@ -61,162 +75,188 @@ export const MetricsDashboard: React.FC = () => {
   });
 
   return (
-    <div style={{ padding: '24px', background: '#0f172a', minHeight: '100vh', color: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="app-layout" style={{ background: 'var(--bg-base)', overflowY: 'auto' }}>
       
-      {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-            📊 Inteligencia de Procesos (Dashboard KPI)
-          </h1>
-          <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Análisis multiusuario en tiempo real para optimización de flujos y cuellos de botella.</p>
+      {/* HEADER PRINCIPAL */}
+      <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', margin: 0, display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--txt-primary)' }}>
+              <span style={{ 
+                width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--clr-purple), var(--clr-purple-dark))', 
+                borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'var(--shadow-purple)'
+              }}>
+                📊
+              </span>
+              Inteligencia de Procesos (KPIs)
+            </h1>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--txt-secondary)', fontSize: '15px', fontFamily: 'var(--font-body)' }}>
+              Análisis retro-vintage en tiempo real para optimización de flujos y cuellos de botella.
+            </p>
+          </div>
+          <Link to={`/d/${diagramId}`} className="saas-button" style={{ width: 'auto', textDecoration: 'none' }}>
+            ← Volver al Editor
+          </Link>
         </div>
-        <Link to={`/d/${diagramId}`} style={{ background: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s' }}>
-          Volver al Editor
-        </Link>
-      </div>
 
-      {/* BARRA DE FILTROS DINÁMICOS */}
-      <div style={{ display: 'flex', gap: '16px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Fecha Inicio</label>
-          <input 
-            type="date" 
-            value={startDate} 
-            onChange={(e) => setStartDate(e.target.value)}
-            style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '8px 12px', fontSize: '13px', outline: 'none' }}
-          />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Fecha Fin</label>
-          <input 
-            type="date" 
-            value={endDate} 
-            onChange={(e) => setEndDate(e.target.value)}
-            style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '8px 12px', fontSize: '13px', outline: 'none' }}
-          />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Filtrar Área (Carril)</label>
-          <select 
-            value={selectedLane} 
-            onChange={(e) => setSelectedLane(e.target.value)}
-            style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '8px 12px', fontSize: '13px', outline: 'none', minWidth: '150px' }}
+        {/* BARRA DE FILTROS DINÁMICOS */}
+        <div className="saas-card" style={{ padding: '20px', marginBottom: '32px', display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label className="label">Fecha Inicio</label>
+            <input 
+              type="date" 
+              className="saas-input"
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label className="label">Fecha Fin</label>
+            <input 
+              type="date" 
+              className="saas-input"
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label className="label">Filtrar Área (Carril)</label>
+            <select 
+              className="saas-input"
+              value={selectedLane} 
+              onChange={(e) => setSelectedLane(e.target.value)}
+              style={{ minWidth: '180px', cursor: 'pointer' }}
+            >
+              <option value="">Todas las Áreas</option>
+              {metrics.performanceByLane.map((lane: any) => (
+                <option key={lane.laneId} value={lane.laneId}>{lane.laneName}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '220px' }}>
+            <label className="label">Buscar Actividad (Nodo)</label>
+            <input 
+              type="text" 
+              className="saas-input"
+              placeholder="Ej: Aprobación de Solicitud..."
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={handleClearFilters}
+            className="saas-button secondary"
+            style={{ width: 'auto', height: '44px' }}
           >
-            <option value="">Todas las Áreas</option>
-            {metrics.performanceByLane.map((lane: any) => (
-              <option key={lane.laneId} value={lane.laneId}>{lane.laneName}</option>
-            ))}
-          </select>
+            Limpiar
+          </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '200px' }}>
-          <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Buscar Actividad (Nodo)</label>
-          <input 
-            type="text" 
-            placeholder="Ej: Aprobación de Solicitud..."
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', padding: '8px 12px', fontSize: '13px', outline: 'none' }}
-          />
-        </div>
-        <button 
-          onClick={handleClearFilters}
-          style={{ background: '#334155', color: '#94a3b8', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, height: '38px', alignSelf: 'flex-end' }}
-        >
-          Limpiar
-        </button>
-      </div>
 
-      {/* TARJETAS DE MÉTRICAS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-        <div className="saas-card" style={{ padding: '20px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', position: 'relative' }}>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Trámites Activos
-            <span title="Instancias del workflow que se encuentran en ejecución (simulación en curso)." style={{ cursor: 'help', color: '#3b82f6' }}>ⓘ</span>
+        {/* TARJETAS DE MÉTRICAS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+          <div className="saas-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ color: 'var(--txt-secondary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)' }}>
+              Trámites Activos
+              <span title="Instancias en ejecución." style={{ cursor: 'help', color: 'var(--clr-teal)' }}>ⓘ</span>
+            </div>
+            <div style={{ fontSize: '42px', fontWeight: 'bold', color: 'var(--clr-teal)', fontFamily: 'var(--font-display)' }}>
+              {metrics.activeProcesses}
+            </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#3b82f6' }}>{metrics.activeProcesses}</div>
-        </div>
-        
-        <div className="saas-card" style={{ padding: '20px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', position: 'relative' }}>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Trámites Completados
-            <span title="Instancias que han recorrido exitosamente todo el flujo y alcanzaron el evento Fin (End Node)." style={{ cursor: 'help', color: '#10b981' }}>ⓘ</span>
+          
+          <div className="saas-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ color: 'var(--txt-secondary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)' }}>
+              Trámites Completados
+              <span title="Instancias terminadas." style={{ cursor: 'help', color: 'var(--clr-sage)' }}>ⓘ</span>
+            </div>
+            <div style={{ fontSize: '42px', fontWeight: 'bold', color: 'var(--clr-sage)', fontFamily: 'var(--font-display)' }}>
+              {metrics.completedProcesses}
+            </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#10b981' }}>{metrics.completedProcesses}</div>
-        </div>
-        
-        <div className="saas-card" style={{ padding: '20px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }}>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>Tiempo Promedio de Resolución</div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f59e0b' }}>
-            {metrics.averageTimeMs ? `${(metrics.averageTimeMs / 1000 / 60).toFixed(1)} min` : 'N/A'}
+          
+          <div className="saas-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ color: 'var(--txt-secondary)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>Tiempo Promedio de Resolución</div>
+            <div style={{ fontSize: '42px', fontWeight: 'bold', color: 'var(--clr-yellow)', fontFamily: 'var(--font-display)' }}>
+              {metrics.averageTimeMs ? `${(metrics.averageTimeMs / 1000 / 60).toFixed(1)}m` : 'N/A'}
+            </div>
+          </div>
+
+          <div className="saas-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ color: 'var(--txt-secondary)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>Colaboradores Activos</div>
+            <div style={{ fontSize: '42px', fontWeight: 'bold', color: 'var(--clr-purple-light)', fontFamily: 'var(--font-display)' }}>
+              {metrics.activeUsers}
+            </div>
           </div>
         </div>
 
-        <div className="saas-card" style={{ padding: '20px', background: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }}>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>Colaboradores Activos</div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#8b5cf6' }}>{metrics.activeUsers}</div>
-        </div>
-      </div>
-
-      {/* GRÁFICOS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', flexWrap: 'wrap' }}>
-        
-        {/* Rendimiento por Área */}
-        <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#e2e8f0', fontWeight: 600 }}>Rendimiento por Área (Tiempo Promedio)</h3>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.performanceByLane} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="laneName" stroke="#94a3b8" fontSize={12} />
-                <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${(val/1000).toFixed(0)}s`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
-                  formatter={(value: any) => [`${(Number(value) / 1000).toFixed(1)} seg`, 'Tiempo Promedio']}
-                />
-                <Legend />
-                <Bar dataKey="averageTimeMs" fill="#3b82f6" name="Tiempo Promedio (ms)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* GRÁFICOS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', flexWrap: 'wrap' }}>
+          
+          {/* Rendimiento por Área */}
+          <div className="saas-card" style={{ padding: '28px' }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+              Rendimiento por Área (Tiempo Promedio)
+            </h3>
+            <div style={{ height: '320px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={metrics.performanceByLane} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
+                  <XAxis dataKey="laneName" stroke="var(--txt-muted)" fontSize={12} fontFamily="var(--font-mono)" />
+                  <YAxis stroke="var(--txt-muted)" fontSize={12} tickFormatter={(val) => `${(val/1000).toFixed(0)}s`} fontFamily="var(--font-mono)" />
+                  <Tooltip 
+                    cursor={{ fill: 'var(--clr-purple-mist)' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border-default)', color: 'var(--txt-primary)', borderRadius: '8px' }}
+                    formatter={(value: any) => [`${(Number(value) / 1000).toFixed(1)} seg`, 'Tiempo Promedio']}
+                  />
+                  <Legend wrapperStyle={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--txt-secondary)' }} />
+                  <Bar dataKey="averageTimeMs" fill="var(--clr-teal)" name="Tiempo Promedio (ms)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        {/* Cuellos de Botella */}
-        <div className="saas-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#e2e8f0', fontWeight: 600 }}>Top Cuellos de Botella (Nodos Críticos)</h3>
-          <div style={{ overflowY: 'auto', maxHeight: '300px' }}>
-            {filteredBottlenecks.length === 0 ? (
-              <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No hay datos que coincidan con la búsqueda.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', textAlign: 'left' }}>
-                    <th style={{ paddingBottom: '10px' }}>Actividad (Nodo)</th>
-                    <th style={{ paddingBottom: '10px' }}>Área (Carril)</th>
-                    <th style={{ paddingBottom: '10px', textAlign: 'right' }}>Tiempo Prom.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBottlenecks.map((b: any, i: number) => (
-                    <tr key={b.nodeId} style={{ borderBottom: '1px solid #334155' }}>
-                      <td 
-                        style={{ padding: '12px 0', color: i === 0 ? '#ef4444' : '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}
-                        title={b.nodeLabel}
-                      >
-                        {i === 0 && '🔥 '} {b.nodeLabel}
-                      </td>
-                      <td style={{ padding: '12px 0', color: '#cbd5e1' }}>{b.laneName}</td>
-                      <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 500, color: i === 0 ? '#ef4444' : '#3b82f6' }}>
-                        {(b.averageTimeMs / 1000).toFixed(1)} seg
-                      </td>
+          {/* Cuellos de Botella */}
+          <div className="saas-card" style={{ padding: '28px' }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', color: 'var(--clr-yellow)', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
+              Top Cuellos de Botella (Nodos Críticos)
+            </h3>
+            <div style={{ overflowY: 'auto', maxHeight: '320px', paddingRight: '10px' }}>
+              {filteredBottlenecks.length === 0 ? (
+                <p style={{ color: 'var(--txt-muted)', fontSize: '14px', textAlign: 'center', marginTop: '40px', fontStyle: 'italic' }}>
+                  No hay datos que coincidan con la búsqueda.
+                </p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-elevated)', zIndex: 1 }}>
+                    <tr style={{ color: 'var(--clr-teal)', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '1px' }}>
+                      <th style={{ paddingBottom: '12px', borderBottom: '1px solid var(--border-default)' }}>Actividad (Nodo)</th>
+                      <th style={{ paddingBottom: '12px', borderBottom: '1px solid var(--border-default)' }}>Área (Carril)</th>
+                      <th style={{ paddingBottom: '12px', borderBottom: '1px solid var(--border-default)', textAlign: 'right' }}>Tiempo Prom.</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {filteredBottlenecks.map((b: any, i: number) => (
+                      <tr key={b.nodeId} style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }}>
+                        <td 
+                          style={{ padding: '16px 0', color: i === 0 ? 'rgb(220,120,120)' : 'var(--txt-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}
+                          title={b.nodeLabel}
+                        >
+                          {i === 0 && '🔥 '} {b.nodeLabel}
+                        </td>
+                        <td style={{ padding: '16px 0', color: 'var(--txt-secondary)' }}>{b.laneName}</td>
+                        <td style={{ padding: '16px 0', textAlign: 'right', fontWeight: 600, color: i === 0 ? 'rgb(220,120,120)' : 'var(--clr-sage)', fontFamily: 'var(--font-mono)' }}>
+                          {(b.averageTimeMs / 1000).toFixed(1)} seg
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );
