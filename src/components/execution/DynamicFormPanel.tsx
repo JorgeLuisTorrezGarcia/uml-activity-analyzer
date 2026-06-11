@@ -299,7 +299,7 @@ export const DynamicFormPanel: React.FC = () => {
         {/* TABLA DE DATOS N8N STYLE EN LUGAR DE PRE JSON */}
         {renderIncomingData(activeToken.payload)}
 
-        {!hasPermission ? (
+        {hasPermission ? (
           <div style={{ background: '#334155', padding: '20px', borderRadius: '8px', textAlign: 'center', marginTop: '20px' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px' }}>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
